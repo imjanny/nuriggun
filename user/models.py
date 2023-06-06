@@ -22,7 +22,6 @@ class UserManager(BaseUserManager):
             email=email,
             password=password,
         )
-        superuser.is_staff = True
         superuser.is_admin = True
         superuser.is_active = True
         superuser.save(using=self._db)
@@ -31,13 +30,17 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     INTEREST = {
-        ('it' , 'it'),
+        ('it/과학' , 'it'),
+        ('경제','economy'),
+        ('생활/문화','culture'),
+        ('세계','wrold'),
+        ('날씨','weather')
     }
 
     email = models.EmailField("이메일", max_length=25, unique=True, null=False, blank=False)
     password = models.CharField("비밀번호", max_length=25)
     nickname = models.CharField("닉네임", max_length=8,null=True, blank=True)
-    interest = models.Choices("관심분야", null=True, blank=True, choices=INTEREST)
+    interest = models.CharField("관심분야", max_length=20, choices=INTEREST)
     profile_img = models.ImageField("프로필 이미지", blank=True, upload_to="profile/%Y/%m/")
     # subscibe = models.ManyToManyField("self", symmetrical=False, related_name="subscribe", blank=True)
     is_admin = models.BooleanField("관리자",default=False)
