@@ -13,6 +13,7 @@ class Article(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
     title = models.CharField(max_length=50, verbose_name="제목")
     content = models.TextField(verbose_name="내용")
+    image = models.ImageField(verbose_name="게시글 이미지")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
    
