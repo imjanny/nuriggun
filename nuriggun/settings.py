@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -53,6 +54,11 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'user',
     'article',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.naver',
+    'allauth.socialaccount.providers.kakao',
     
 ]
 
@@ -200,6 +206,13 @@ SIMPLE_JWT = {
 
 }
 
+AUTHENTICATION_BACKENDS = [ # 소셜로그인 
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 # 사이트 1개만 사용
 SITE_ID = 1
 
@@ -228,7 +241,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com' # 메일 호스트 서버
-EMAIL_PORT = '587' # gmail과 통신하는 포트
+EMAIL_PORT = '587' # naver와 통신하는 포트
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") # 발신할 이메일
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") # 발신할 메일의 비밀번호
 EMAIL_USE_TLS = True # TLS 보안 방법
@@ -238,3 +251,14 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True # 유저가 받은 링크를 클릭하면 �
 ACCOUNT_EMAIL_VERIFICATION = False
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[nuriggun]" # 이메일에 자동으로 표시되는 사이트 정보
+
+
+
+#소셜 로그인 관련
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',    
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+LOGIN_REDIRECT_URL = '/'   # social login redirect
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # logout redirect
