@@ -12,7 +12,7 @@ urlpatterns = [
     
     path('accounts/', include('allauth.urls')), # allauth의 기능을 accounts라는 주소 아래 담는다.
     ## 네이버 http://127.0.0.1:8000/accounts/naver/login/callback/
-    
+
     # 이메일인증 (없어도 되지만 일단 주석처리 해두겠습니다...)
     # re_path(r"^account-confirm-email/$", VerifyEmailView.as_view(), name="account_email_verification_sent",),
     # re_path(r"^account-confirm-email/(?P<key>[-:\w]+)/$", ConfirmEmailView.as_view(), name="account_confirm_email",),
@@ -21,5 +21,7 @@ urlpatterns = [
     path('password/reset/', PasswordResetView.as_view(), name='rest_password_reset'),
     path('password/reset/confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
+
+    path('subscribe/<int:user_id>/', views.SubscribeView.as_view(), name='subscribe_view'), # /user/subscribe/<int:user_id>/ 구독
 ]
 
