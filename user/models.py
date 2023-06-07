@@ -29,14 +29,14 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    INTEREST = {
+    INTEREST = [
         ('it/과학', 'it'),
         ('경제', 'economy'),
         ('생활/문화', 'culture'),
         ('스포츠', 'sport'),
         ('날씨', 'weather'),
         ('세계', 'wrold')
-    }
+    ]
 
     email = models.EmailField("이메일", max_length=25, unique=True, null=False, blank=False)
     password = models.CharField("비밀번호", max_length=25)
