@@ -34,7 +34,7 @@ class ArticleView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ------------------------------------- 게시글 작성 -------------------------------------
+# ------------------------------------ 게시글 작성 -------------------------------------
 
     def post(self, request): 
         serializer = ArticleCreateSerializer(data=request.data)
@@ -45,7 +45,7 @@ class ArticleView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ------------------------------------- 게시글 리스트 보기 -------------------------------------      
+# ------------------------------------ 게시글 리스트 보기 -------------------------------------      
 
 
 class ArticleListView(APIView):
@@ -58,4 +58,37 @@ class ArticleListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# ------------------------------------- 게시글 상세페이지 -------------------------------------      
+# ------------------------------------ 게시글 상세페이지 -------------------------------------      
+
+class ArticleDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        serializer = ArticleSerializer(article)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, article_id): # patch 원하는 것만 수정이 가능하다.!
+        article = get_object_or_404(Article, id=article_id)
+        if request.user == article.user:
+            serializer = ArticleCreateSerializer(
+                article, data=request.data, partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
+    def delete(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        if request.user == article.user:
+            article.delete()
+            return Response({"message": "삭제완료!"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
+
+# ------------------------------------ 게시글 상세페이지 -------------------------------------
