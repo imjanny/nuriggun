@@ -100,12 +100,12 @@ WSGI_APPLICATION = 'nuriggun.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -211,7 +211,8 @@ SITE_ID = 1
 REST_AUTH = {
     'USE_JWT' : True,
     'JWT_AUTH_HTTPONLY': False,
-    # 'JWT_AUTH_REFRESH_COOKIE' : "refresh_token",
+    'JWT_AUTH_REFRESH_COOKIE' : "refresh_token",
+    "JWT_AUTH_COOKIE": "access",
     'JWT_AUTH_COOKIE_USE_CSRF' : True,
     'SESSION_LOGIN' : False
 }
