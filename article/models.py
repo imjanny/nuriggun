@@ -6,6 +6,7 @@ from django.urls import reverse  # 테스트 코드
 
 
 #------------------------- 게시글 모델 -------------------------
+
 class Article(models.Model):
     class Meta:
         db_table = "Article"
@@ -16,26 +17,47 @@ class Article(models.Model):
     image = models.ImageField(verbose_name="게시글 이미지")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
-   
-#--------------------- 좋아요 관련 나중에 작성할 예정 -------------------------
 
 
+#------------------------- 카테고리 모델 -------------------------
+    
+    CATEGORIES = (
 
+        ('it/과학', 'it'),
+        ('경제', 'economy'),
+        ('생활/문화', 'culture'),
+        ('스포츠', 'sport'),
+        ('날씨', 'weather'),
+        ('세계', 'wrold'),
 
+    )
+    category = models.CharField("카테고리", choices=CATEGORIES, max_length=10)
 
-
+#------------------------- 스크랩(북마크) -------------------------
+    
+    #스크랩(북마크) : 게시글과 사용자를 연결하는 Many To Many 필드
+    scrap = models.ManyToManyField(User, blank=True, related_name='scrap')
+    
+    # 북마크 갯수 세는 함수
+    def count_scrap(self):
+        return self.scrap.count()
+    
+  
+#--------------------- 좋아요 관련 나중에 작성할 예정 ------------------
 
 
 
 
 #------------------------- 테스트 코드 함수 -------------------------
+    
     def get_absolute_url(self):
-        return reverse("articles:article_detail_view", kwargs={"article_id": self.pk})
+        return reverse("article_detail_view", kwargs={"article_id": self.pk})
 
     def __str__(self):
         return str(self.title)
     
-# 댓글 models
+#------------------------- 댓글 모델 -------------------------
+
 class Comment(models.Model):
     class Meta:
         db_table = "comment"
@@ -47,7 +69,9 @@ class Comment(models.Model):
     comment_created_at = models.DateTimeField(auto_now_add=True)
     comment_updated_at = models.DateTimeField(auto_now_add=True)
 
+
 #--------------------- 댓글 좋아요 관련 나중에 작성할 예정 -------------------------
+
 
 
     def __str__(self):

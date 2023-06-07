@@ -1,52 +1,88 @@
 from rest_framework import serializers
 from article.models import Article, Comment
 
-class CommentSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
 
-    def get_user(self, obj):
-        return obj.user.email
-
-    class Meta:
-        model = Comment
-        exclude = ("article",) 
-
-
-class CommentCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ("content",)
-        
+#---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    comment_set = CommentSerializer(many= True) # 게시글에 대한 댓글 불러오기 (comment_set = related_name)
+    article_created_at = serializers.DateTimeField(
+        format='%Y-%m-%d', read_only=True)
+    article_updated_at = serializers.DateTimeField(
+        format='%Y-%m-%d', read_only=True)
 
     def get_user(self, obj):
-        return obj.user.email # user값을 email로 가져오겠다.
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
+
+
+    # def get_name(self, obj):
+    #     return dir.user.nickname
     
+    # def get_user(self, obj):
+    #     return dir.user.id
+
+
     class Meta:
         model = Article
         fields = '__all__'
 
 
+
 class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ("title", "image", "content")
+        fields = ("pk", "user", "article_title", "article_content",
+                  "article_img", "category", "article_created_at", "article_updated_at")
 
-    
-class ArticleListSerializer(serializers.ModelSerializer):
+   
+
+
+class ArticlesUpdateSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    comment_count = serializers.SerializerMethodField()
 
     def get_user(self, obj):
-        return obj.user.email
-   
-    
-    def get_comment_count(self, obj):
-        return obj.comment_set.count()
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
 
-class Meta:
+    class Meta:
         model = Article
-        fields = ("pk", "title", "image", "user") # 선택한 항목만 가져오겠다.
+        fields = ("pk", "user", "article_title",
+                  "article_content", "article_img", "category")
+   
+
+
+
+class ArticleListSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    changed_image = serializers.ImageField()
+
+    def get_user(self, obj):
+        return {"nickname": obj.user.nickname, "id": obj.user.id,}
+
+    class Meta:
+        model = Article
+        fields = ["id", "title", "user", "image",]
+         
+
+
+#---------------------------- 댓글 ----------------------------
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    comment_created_at = serializers.DateTimeField(
+        format='%Y-%m-%d', read_only=True)
+    comment_updated_at = serializers.DateTimeField(
+        format='%Y-%m-%d', read_only=True)
+
+    def get_user(self, obj):
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
+
+    class Meta:
+        model = Comment
+        exclude = ('article',)  # 게시글 필드 빼고 보여주기 
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ("comment",)
