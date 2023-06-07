@@ -38,8 +38,8 @@ class User(AbstractBaseUser):
         ('세계', 'wrold')
     ]
 
-    email = models.EmailField("이메일", max_length=25, unique=True, null=False, blank=False)
-    password = models.CharField("비밀번호", max_length=25)
+    email = models.EmailField("email address", max_length=25, unique=True, null=False, blank=False)
+    password = models.CharField("비밀번호", max_length=200)
     nickname = models.CharField("닉네임", max_length=8,null=True, blank=True)
     interest = models.CharField("관심분야", max_length=15, choices=INTEREST)
     profile_img = models.ImageField("프로필 이미지", blank=True, upload_to="profile/%Y/%m/")
