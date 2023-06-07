@@ -87,7 +87,9 @@ ROOT_URLCONF = 'nuriggun.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -251,7 +253,7 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True # 유저가 받은 링크를 클릭하면 �
 ACCOUNT_EMAIL_VERIFICATION = False
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[nuriggun]" # 이메일에 자동으로 표시되는 사이트 정보
-
+PASSWORD_RESET_TIMEOUT = 86400 # 비밀번호 재설정 만료 기간 (1일)
 
 
 #소셜 로그인 관련
