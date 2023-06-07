@@ -91,4 +91,49 @@ class ArticleDetailView(APIView):
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
 
-# ------------------------------------ 게시글 상세페이지 -------------------------------------
+# ------------------------------------ 게시글 스크랩 -------------------------------------
+
+
+class ScrapView(APIView):
+    def post(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        if request.user in article.scrap.all():
+            article.scrap.remove(request.user)
+            return Response('스크랩취소', status=status.HTTP_200_OK)
+        else:
+            article.scrap.add(request.user)
+            return Response('스크랩', status=status.HTTP_200_OK)
+
+
+    def get(self, request, article_id):
+        article = Article.objects.get(id=article_id)
+        scrap_count = article.count_scrap()
+        return Response({'scrap': scrap_count})
+    
+  
+
+#------------------------------------ 게시글 스크랩 리스트 -------------------------------------
+
+class ScrapListView(APIView):
+    def post(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        if request.user in article.scrap.all():
+            article.scrap.remove(request.user)
+            return Response('스크랩 취소', status=status.HTTP_200_OK)
+        else:
+            article.scrap.add(request.user)
+            return Response('스크랩', status=status.HTTP_200_OK)    
+   
+   
+# ----------------------------------- 스크랩 한 게시글 보기 -----------------------------------
+
+    def get(self, request):
+        user = request.user
+        article = user.scrap.all()
+        serializer = ArticleSerializer(article, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+#---------------------------------- 게시글 좋아요 5종 반응 ?---------------------------------
+
