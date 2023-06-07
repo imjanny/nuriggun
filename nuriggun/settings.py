@@ -240,8 +240,8 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.naver.com' # 메일 호스트 서버
-EMAIL_PORT = '465' # naver와 통신하는 포트
+EMAIL_HOST = 'smtp.gmail.com' # 메일 호스트 서버
+EMAIL_PORT = '587' # naver와 통신하는 포트
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") # 발신할 이메일
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") # 발신할 메일의 비밀번호
 EMAIL_USE_TLS = True # TLS 보안 방법
@@ -259,9 +259,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
-SOCIALACCOUNT_PROVIDERS = os.environ.get("SOCIALACCOUNT_PROVIDERS")
-
 
 LOGIN_REDIRECT_URL = '/'   # social login redirect
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # logout redirect
