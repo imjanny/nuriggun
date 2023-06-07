@@ -31,8 +31,8 @@ class ArticleSerializer(serializers.ModelSerializer):
 class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ("pk", "user", "article_title", "article_content",
-                  "article_img", "category", "article_created_at", "article_updated_at")
+        fields = ("pk", "user", "title", "content",
+                  "image", "category", "created_at", "updated_at")
 
    
 
@@ -45,8 +45,8 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ("pk", "user", "article_title",
-                  "article_content", "article_img", "category")
+        fields = ("pk", "user", "title",
+                  "content", "image", "category")
    
 
 

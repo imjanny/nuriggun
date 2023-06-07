@@ -43,7 +43,7 @@ class User(AbstractBaseUser):
     nickname = models.CharField("닉네임", max_length=8,null=True, blank=True)
     interest = models.CharField("관심분야", max_length=15, choices=INTEREST)
     profile_img = models.ImageField("프로필 이미지", blank=True, upload_to="profile/%Y/%m/")
-    # subscibe = models.ManyToManyField("self", symmetrical=False, related_name="subscribe", blank=True)
+    subscribe = models.ManyToManyField("self", symmetrical=False, related_name="subscribes", blank=True)
     is_admin = models.BooleanField("관리자",default=False)
     is_active = models.BooleanField("활성화",default=True)
     is_staff = models.BooleanField("스태프",default=False)
