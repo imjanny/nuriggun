@@ -6,13 +6,15 @@ from article.models import Article, Comment
 from article.serializers import (
     ArticleSerializer,
     ArticleCreateSerializer,
-    ArticlesUpdateSerializer,
     CommentSerializer,
-    CommentCreateSerializer)
+    CommentCreateSerializer,
+    ArticleSearchSerializer
+    )
 import datetime
 from rest_framework import permissions
 
 from user.models import User
+from rest_framework import generics, filters
 
 
 #------------------------------------- 게시글 생성 ------------------------------------- 
@@ -135,5 +137,60 @@ class ScrapListView(APIView):
 
 
 
-#---------------------------------- 게시글 좋아요 5종 반응 ?---------------------------------
+#---------------------------------- 게시글 좋아요 5종 반응 ---------------------------------
 
+# class CommentLikeView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     # 좋아요
+#     def post(self, request, comment_id):
+#         try:
+#             comment = Comment.objects.get(id=comment_id)
+#         except Comment.DoesNotExist:
+#             return Response({"error": "댓글이 없습니다."}, status=404)
+#         comment.like += 1
+#         comment.save()
+#         return Response({"message": "좋아요!"}, status=status.HTTP_204_NO_CONTENT)
+    
+    
+# class CommentHateView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     # 싫어요
+#     def post(self, request, comment_id):
+#         try:
+#             comment = Comment.objects.get(id=comment_id)
+#         except Comment.DoesNotExist:
+#             return Response({"error": "댓글이 없습니다."}, status=404)
+#         comment.hate += 1
+#         comment.save()
+#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
+
+# class CommentHateView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     # 싫어요
+#     def post(self, request, comment_id):
+#         try:
+#             comment = Comment.objects.get(id=comment_id)
+#         except Comment.DoesNotExist:
+#             return Response({"error": "댓글이 없습니다."}, status=404)
+#         comment.hate += 1
+#         comment.save()
+#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
+    
+# class CommentHateView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     # 싫어요
+#     def post(self, request, comment_id):
+#         try:
+#             comment = Comment.objects.get(id=comment_id)
+#         except Comment.DoesNotExist:
+#             return Response({"error": "댓글이 없습니다."}, status=404)
+#         comment.hate += 1
+#         comment.save()
+#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
+
+
+# class ArticleSearchView(generics.ListCreateAPIView):
+#     search_fields = ["title", "context", "tag__name","id",]
+#     filter_backends = (filters.SearchFilter,)
+#     queryset = Article.objects.all()
+#     serializer_class = ArticleSearchSerializer

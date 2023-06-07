@@ -86,3 +86,12 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ("comment",)
+
+
+
+#---------------------------- 검색 기능 ----------------------------
+
+class ArticleSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        fields = ["title","context","id",]

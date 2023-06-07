@@ -9,5 +9,7 @@ urlpatterns = [
     # path("<int:article_id>/comment/", views.CommentView.as_view(), name="comment_view"),
     path('scrap/', views.ScrapListView.as_view(),name='scrap_view'),  # 북마크 한 게시글
     path('<int:article_id>/scrap/', views.ScrapView.as_view(),name='scrap_view'),  # 북마크 기능
+    path("search/", views.ArticleSearchView.as_view(), name="article_search"), # 검색 기능
 ]
+
 
