@@ -1,3 +1,78 @@
 from django.db import models
+from user.models import User
+import os
+from datetime import date
+from django.urls import reverse  # 테스트 코드
 
-# Create your models here.
+
+#------------------------- 게시글 모델 -------------------------
+
+class Article(models.Model):
+    class Meta:
+        db_table = "Article"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
+    title = models.CharField(max_length=50, verbose_name="제목")
+    content = models.TextField(verbose_name="내용")
+    image = models.ImageField(verbose_name="게시글 이미지")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
+
+
+#------------------------- 카테고리 모델 -------------------------
+    
+    CATEGORIES = (
+
+        ('it/과학', 'it'),
+        ('경제', 'economy'),
+        ('생활/문화', 'culture'),
+        ('스포츠', 'sport'),
+        ('날씨', 'weather'),
+        ('세계', 'wrold'),
+
+    )
+    category = models.CharField("카테고리", choices=CATEGORIES, max_length=10)
+
+#------------------------- 스크랩(북마크) -------------------------
+    
+    #스크랩(북마크) : 게시글과 사용자를 연결하는 Many To Many 필드
+    scrap = models.ManyToManyField(User, blank=True, related_name='scrap')
+    
+    # 북마크 갯수 세는 함수
+    def count_scrap(self):
+        return self.scrap.count()
+    
+  
+#--------------------- 좋아요 관련 나중에 작성할 예정 ------------------
+
+
+
+
+#------------------------- 테스트 코드 함수 -------------------------
+    
+    def get_absolute_url(self):
+        return reverse("article_detail_view", kwargs={"article_id": self.pk})
+
+    def __str__(self):
+        return str(self.title)
+    
+#------------------------- 댓글 모델 -------------------------
+
+class Comment(models.Model):
+    class Meta:
+        db_table = "comment"
+        ordering = ["-comment_created_at"]  # 댓글 최신순 정렬
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comment")
+    comment = models.TextField("댓글")
+    comment_created_at = models.DateTimeField(auto_now_add=True)
+    comment_updated_at = models.DateTimeField(auto_now_add=True)
+
+
+#--------------------- 댓글 좋아요 관련 나중에 작성할 예정 -------------------------
+
+
+
+    def __str__(self):
+        return str(self.comment)
