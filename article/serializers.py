@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from article.models import Article, Comment
-from .models import ArticleReaction
 
 
 #---------------------------- 게시글 ----------------------------
@@ -111,4 +110,4 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class ArticleSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ["title","context","id",]
+        fields = ["title","content","id",]

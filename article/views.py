@@ -173,7 +173,7 @@ class ArticleReactionView(APIView):
 
 
 class ArticleSearchView(generics.ListCreateAPIView):
-    search_fields = ["title", "context", "tag__name","id",]
+    search_fields = ["title", "content","id",]
     filter_backends = (filters.SearchFilter,)
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
