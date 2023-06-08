@@ -17,6 +17,26 @@ class Article(models.Model):
     image = models.ImageField(verbose_name="게시글 이미지")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
+    # like = models.IntegerField(default=0)
+    # hate = models.IntegerField(default=0)
+    # like = models.IntegerField(default=0)
+    # hate = models.IntegerField(default=0)
+    # like = models.IntegerField(default=0)
+
+
+  
+#--------------------- 게시글 반응 ------------------
+# class ArticleLike(models.Model):
+#     article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name="해당 댓글")
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+# class ArticletHate(models.Model):
+#     article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name="해당 댓글")
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+#     # def __str__(self):
+#     #     return str(self.comment)
+
 
 
 #------------------------- 카테고리 모델 -------------------------
@@ -42,9 +62,6 @@ class Article(models.Model):
     def count_scrap(self):
         return self.scrap.count()
     
-  
-#--------------------- 좋아요 관련 나중에 작성할 예정 ------------------
-
 
 
 
@@ -68,11 +85,6 @@ class Comment(models.Model):
     comment = models.TextField("댓글")
     comment_created_at = models.DateTimeField(auto_now_add=True)
     comment_updated_at = models.DateTimeField(auto_now_add=True)
-
-
-#--------------------- 댓글 좋아요 관련 나중에 작성할 예정 -------------------------
-
-
 
     def __str__(self):
         return str(self.comment)
