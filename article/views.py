@@ -200,5 +200,18 @@ class CommentView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    # 댓글 수정
+    def put(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            serializer = CommentCreateSerializer(comment, data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response({"message":"댓글 수정완료"}, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message":"권한이 없습니다."},status=status.HTTP_400_BAD_REQUEST)
     
 # ----- 댓글 끝 -----
