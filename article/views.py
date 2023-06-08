@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from article.models import Article, Comment
+from article.models import Article, Comment, CommentReaction
 from article.serializers import (
     ArticleSerializer,
     ArticleCreateSerializer,
@@ -12,6 +12,7 @@ from article.serializers import (
     )
 import datetime
 from rest_framework import permissions
+from .models import ArticleReaction
 
 from user.models import User
 from rest_framework import generics, filters
@@ -139,58 +140,158 @@ class ScrapListView(APIView):
 
 #---------------------------------- 게시글 좋아요 5종 반응 ---------------------------------
 
-# class CommentLikeView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 좋아요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.like += 1
-#         comment.save()
-#         return Response({"message": "좋아요!"}, status=status.HTTP_204_NO_CONTENT)
-    
-    
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
 
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
-    
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
+class ArticleReactionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, article_id):
+        try:
+            article = get_object_or_404(Article, id=article_id)
+        except Article.DoesNotExist:
+            return Response({"error": "게시글이 없습니다."}, status=404)
+
+        reaction = request.data.get('reaction')
+
+        if reaction in ['great', 'sad', 'angry', 'good', 'subsequent']:
+            reaction_field = getattr(article, reaction) #getattr 아직 잘모르지만 나중에?
+
+            if request.user in reaction_field.all():
+                # 사용자가 이미 반응을 한 상태이므로 반응을 취소
+                reaction_field.remove(request.user)
+                message = "반응을 취소했습니다."
+            else:
+                # 사용자가 반응을 하지 않은 상태이므로 반응을 추가
+                reaction_field.add(request.user)
+                message = "반응을 눌렀습니다."
+
+            return Response({"message": message}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "유효하지 않은 반응 타입입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class ArticleSearchView(generics.ListCreateAPIView):
-#     search_fields = ["title", "context", "tag__name","id",]
-#     filter_backends = (filters.SearchFilter,)
-#     queryset = Article.objects.all()
-#     serializer_class = ArticleSearchSerializer
+#----------------------------------- 검색 기능 -----------------------------------
+
+
+class ArticleSearchView(generics.ListCreateAPIView):
+    search_fields = ["title", "context", "tag__name","id",]
+    filter_backends = (filters.SearchFilter,)
+    queryset = Article.objects.all()
+    serializer_class = ArticleSearchSerializer
+
+
+# ----- 댓글 시작 -----
+
+class CommentView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # 게시글 댓글 보기
+    def get(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        comments = article.comment.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # 댓글 작성
+    def post(self, request, article_id):
+        serializer = CommentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            request.user.save()
+            serializer.save(user=request.user, article_id=article_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    # 댓글 수정
+    def put(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            serializer = CommentCreateSerializer(comment, data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response({"message":"댓글 수정했습니다."}, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message":"댓글 작성자만 수정할 수 있습니다."},status=status.HTTP_403_FORBIDDEN)
+        
+    # 댓글 삭제
+    def delete(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            comment.delete()
+            return Response({"message": "댓글을 삭제하였습니다."}, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"message": "댓글 작성자만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+        
+
+# ----- 댓글 반응 -----
+
+class CommentLikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # 좋아요
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        user = request.user
+
+        try:
+            commentreaction = CommentReaction.objects.get(comment=comment, user=user)
+        except CommentReaction.DoesNotExist:
+            commentreaction = CommentReaction.objects.create(comment=comment, user=user)
+
+        if user in commentreaction.like.all():
+            commentreaction.like.remove(user)
+            comment.like_count -=1
+            comment.save()
+            return Response("좋아요를 취소했습니다.", status=status.HTTP_200_OK)
+        
+        elif user in commentreaction.hate.all():
+            commentreaction.hate.remove(user)
+            commentreaction.like.add(user)
+            comment.like_count +=1
+            comment.hate_count -=1
+            comment.save()
+            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_200_OK)
+        
+        else:
+            commentreaction.like.add(user)
+            comment.like_count +=1
+            comment.save()
+            return Response("좋아요를 했습니다.", status=status.HTTP_200_OK)
+ 
+
+class CommentHateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # 싫어요
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        user = request.user
+
+        try:
+            commentreaction = CommentReaction.objects.get(comment=comment, user=user)
+        except CommentReaction.DoesNotExist:
+            commentreaction = CommentReaction.objects.create(comment=comment, user=user)
+
+        if user in commentreaction.hate.all():
+            commentreaction.hate.remove(user)
+            comment.hate_count -=1
+            comment.save()
+            return Response("싫어요를 취소했습니다.", status=status.HTTP_200_OK)
+        
+        elif user in commentreaction.like.all():
+            commentreaction.like.remove(user)
+            commentreaction.hate.add(user)
+            comment.hate_count +=1
+            comment.like_count -=1
+            comment.save()
+            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_200_OK)
+        
+        else:
+            commentreaction.hate.add(user)
+            comment.hate_count +=1
+            comment.save()
+            return Response("싫어요를 했습니다.", status=status.HTTP_200_OK)
+    
+# ----- 댓글 끝 -----

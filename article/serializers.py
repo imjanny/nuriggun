@@ -1,30 +1,47 @@
 from rest_framework import serializers
 from article.models import Article, Comment
+from .models import ArticleReaction
 
 
 #---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    article_created_at = serializers.DateTimeField(
-        format='%Y-%m-%d', read_only=True)
-    article_updated_at = serializers.DateTimeField(
-        format='%Y-%m-%d', read_only=True)
+    article_created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    article_updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    reaction = serializers.SerializerMethodField()
+
+
 
     def get_user(self, obj):
         return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
 
-
-    # def get_name(self, obj):
-    #     return dir.user.nickname
-    
-    # def get_user(self, obj):
-    #     return dir.user.id
-
+    def get_reaction(self, obj):
+        reaction_data = {
+            'great': 0,
+            'sad': 0,
+            'angry': 0,
+            'good': 0,
+            'subsequent': 0
+        }
+        reaction = obj.articlereaction_set.all()
+        for reaction in reaction:
+            if reaction.great:
+                reaction_data['great'] += 1
+            elif reaction.sad:
+                reaction_data['sad'] += 1
+            elif reaction.angry:
+                reaction_data['angry'] += 1
+            elif reaction.good:
+                reaction_data['good'] += 1
+            elif reaction.subsequent:
+                reaction_data['subsequent'] += 1
+        return reaction_data
 
     class Meta:
         model = Article
-        fields = '__all__'
+        fields = ['id', 'title', 'content', 'user', 'article_created_at', 'article_updated_at', 'reaction']
+
 
 
 
@@ -32,7 +49,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "image", "category", "created_at", "updated_at")
+                  "created_at", "updated_at")
 
    
 
