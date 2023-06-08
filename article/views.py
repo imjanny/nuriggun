@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from article.models import Article,Comment
+from article.models import Article, Comment, CommentReaction
 from article.serializers import (
     ArticleSerializer,
     ArticleCreateSerializer,
@@ -152,7 +152,7 @@ class ArticleReactionView(APIView):
 
         reaction = request.data.get('reaction')
 
-        if reaction in ['like', 'sad', 'angry', 'good', 'subsequent']:
+        if reaction in ['great', 'sad', 'angry', 'good', 'subsequent']:
             reaction_field = getattr(article, reaction) #getattr 아직 잘모르지만 나중에?
 
             if request.user in reaction_field.all():
@@ -173,7 +173,125 @@ class ArticleReactionView(APIView):
 
 
 class ArticleSearchView(generics.ListCreateAPIView):
-    search_fields = ["title", "context", "tag__name","id",]
+    search_fields = ["title", "content","id",]
     filter_backends = (filters.SearchFilter,)
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
+
+
+# ----- 댓글 시작 -----
+
+class CommentView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # 게시글 댓글 보기
+    def get(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        comments = article.comment.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # 댓글 작성
+    def post(self, request, article_id):
+        serializer = CommentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            request.user.save()
+            serializer.save(user=request.user, article_id=article_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    # 댓글 수정
+    def put(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            serializer = CommentCreateSerializer(comment, data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user)
+                return Response({"message":"댓글 수정했습니다."}, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message":"댓글 작성자만 수정할 수 있습니다."},status=status.HTTP_403_FORBIDDEN)
+        
+    # 댓글 삭제
+    def delete(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            comment.delete()
+            return Response({"message": "댓글을 삭제하였습니다."}, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"message": "댓글 작성자만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+        
+
+# ----- 댓글 반응 -----
+
+class CommentLikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # 좋아요
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        user = request.user
+
+        try:
+            commentreaction = CommentReaction.objects.get(comment=comment, user=user)
+        except CommentReaction.DoesNotExist:
+            commentreaction = CommentReaction.objects.create(comment=comment, user=user)
+
+        if user in commentreaction.like.all():
+            commentreaction.like.remove(user)
+            comment.like_count -=1
+            comment.save()
+            return Response("좋아요를 취소했습니다.", status=status.HTTP_200_OK)
+        
+        elif user in commentreaction.hate.all():
+            commentreaction.hate.remove(user)
+            commentreaction.like.add(user)
+            comment.like_count +=1
+            comment.hate_count -=1
+            comment.save()
+            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_200_OK)
+        
+        else:
+            commentreaction.like.add(user)
+            comment.like_count +=1
+            comment.save()
+            return Response("좋아요를 했습니다.", status=status.HTTP_200_OK)
+ 
+
+class CommentHateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # 싫어요
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        user = request.user
+
+        try:
+            commentreaction = CommentReaction.objects.get(comment=comment, user=user)
+        except CommentReaction.DoesNotExist:
+            commentreaction = CommentReaction.objects.create(comment=comment, user=user)
+
+        if user in commentreaction.hate.all():
+            commentreaction.hate.remove(user)
+            comment.hate_count -=1
+            comment.save()
+            return Response("싫어요를 취소했습니다.", status=status.HTTP_200_OK)
+        
+        elif user in commentreaction.like.all():
+            commentreaction.like.remove(user)
+            commentreaction.hate.add(user)
+            comment.hate_count +=1
+            comment.like_count -=1
+            comment.save()
+            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_200_OK)
+        
+        else:
+            commentreaction.hate.add(user)
+            comment.hate_count +=1
+            comment.save()
+            return Response("싫어요를 했습니다.", status=status.HTTP_200_OK)
+    
+# ----- 댓글 끝 -----

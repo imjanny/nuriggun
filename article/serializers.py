@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from article.models import Article, Comment
-from .models import ArticleReaction
 
 
 #---------------------------- 게시글 ----------------------------
@@ -18,7 +17,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_reaction(self, obj):
         reaction_data = {
-            'like': 0,
+            'great': 0,
             'sad': 0,
             'angry': 0,
             'good': 0,
@@ -26,8 +25,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         }
         reaction = obj.articlereaction_set.all()
         for reaction in reaction:
-            if reaction.like:
-                reaction_data['like'] += 1
+            if reaction.great:
+                reaction_data['great'] += 1
             elif reaction.sad:
                 reaction_data['sad'] += 1
             elif reaction.angry:
@@ -111,4 +110,4 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class ArticleSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ["title","context","id",]
+        fields = ["title","content","id",]
