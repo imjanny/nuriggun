@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.kakao',
-    
+    'allauth.socialaccount.providers.github',
 ]
 
 REST_FRAMEWORK = {
@@ -162,7 +162,16 @@ MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
 
 
 CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000'
