@@ -87,6 +87,14 @@ class Comment(models.Model):
     comment = models.TextField("댓글")
     comment_created_at = models.DateTimeField(auto_now_add=True)
     comment_updated_at = models.DateTimeField(auto_now_add=True)
+    like_count = models.PositiveIntegerField(default=0)
+    hate_count = models.PositiveIntegerField(default=0)
 
-    def __str__(self):
-        return str(self.comment)
+class CommentReaction(models.Model):
+    class Meta:
+        db_table = "commentreaction"
+        
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    like = models.ManyToManyField(User, blank=True, related_name="like")
+    hate = models.ManyToManyField(User, blank=True, related_name="hate")
