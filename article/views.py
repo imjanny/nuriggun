@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from article.models import Article, Comment
+from article.models import Article,Comment
 from article.serializers import (
     ArticleSerializer,
     ArticleCreateSerializer,
@@ -12,6 +12,7 @@ from article.serializers import (
     )
 import datetime
 from rest_framework import permissions
+from .models import ArticleReaction
 
 from user.models import User
 from rest_framework import generics, filters
@@ -139,58 +140,40 @@ class ScrapListView(APIView):
 
 #---------------------------------- 게시글 좋아요 5종 반응 ---------------------------------
 
-# class CommentLikeView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 좋아요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.like += 1
-#         comment.save()
-#         return Response({"message": "좋아요!"}, status=status.HTTP_204_NO_CONTENT)
-    
-    
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
 
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
-    
-# class CommentHateView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#     # 싫어요
-#     def post(self, request, comment_id):
-#         try:
-#             comment = Comment.objects.get(id=comment_id)
-#         except Comment.DoesNotExist:
-#             return Response({"error": "댓글이 없습니다."}, status=404)
-#         comment.hate += 1
-#         comment.save()
-#         return Response({"message": "싫어!"}, status=status.HTTP_204_NO_CONTENT)
+class ArticleReactionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, article_id):
+        try:
+            article = get_object_or_404(Article, id=article_id)
+        except Article.DoesNotExist:
+            return Response({"error": "게시글이 없습니다."}, status=404)
+
+        reaction = request.data.get('reaction')
+
+        if reaction in ['like', 'sad', 'angry', 'good', 'subsequent']:
+            reaction_field = getattr(article, reaction) #getattr 아직 잘모르지만 나중에?
+
+            if request.user in reaction_field.all():
+                # 사용자가 이미 반응을 한 상태이므로 반응을 취소
+                reaction_field.remove(request.user)
+                message = "반응을 취소했습니다."
+            else:
+                # 사용자가 반응을 하지 않은 상태이므로 반응을 추가
+                reaction_field.add(request.user)
+                message = "반응을 눌렀습니다."
+
+            return Response({"message": message}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "유효하지 않은 반응 타입입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class ArticleSearchView(generics.ListCreateAPIView):
-#     search_fields = ["title", "context", "tag__name","id",]
-#     filter_backends = (filters.SearchFilter,)
-#     queryset = Article.objects.all()
-#     serializer_class = ArticleSearchSerializer
+#----------------------------------- 검색 기능 -----------------------------------
+
+
+class ArticleSearchView(generics.ListCreateAPIView):
+    search_fields = ["title", "context", "tag__name","id",]
+    filter_backends = (filters.SearchFilter,)
+    queryset = Article.objects.all()
+    serializer_class = ArticleSearchSerializer
