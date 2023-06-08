@@ -17,28 +17,14 @@ class Article(models.Model):
     image = models.ImageField(verbose_name="게시글 이미지")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
-    # like = models.IntegerField(default=0)
-    # hate = models.IntegerField(default=0)
-    # like = models.IntegerField(default=0)
-    # hate = models.IntegerField(default=0)
-    # like = models.IntegerField(default=0)
+    like = models.ManyToManyField(User, blank=True, related_name="like")
+    sad = models.ManyToManyField(User, blank=True, related_name="sad")
+    angry = models.ManyToManyField(User, blank=True, related_name="angry")
+    good = models.ManyToManyField(User, blank=True, related_name="good")
+    subsequent = models.ManyToManyField(User, blank=True, related_name="subsequent")
 
 
-  
-#--------------------- 게시글 반응 ------------------
-# class ArticleLike(models.Model):
-#     article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name="해당 댓글")
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-# class ArticletHate(models.Model):
-#     article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name="해당 댓글")
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-#     # def __str__(self):
-#     #     return str(self.comment)
-
-
-
+    
 #------------------------- 카테고리 모델 -------------------------
     
     CATEGORIES = (
@@ -62,9 +48,6 @@ class Article(models.Model):
     def count_scrap(self):
         return self.scrap.count()
     
-
-
-
 #------------------------- 테스트 코드 함수 -------------------------
     
     def get_absolute_url(self):
@@ -73,6 +56,25 @@ class Article(models.Model):
     def __str__(self):
         return str(self.title)
     
+
+#--------------------- 게시글 반응 ------------------
+
+
+class ArticleReaction(models.Model):
+    class Meta:
+        db_table = "Articlereaction"
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, verbose_name="해당 게시글")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    like = models.BooleanField(default=False)
+    sad = models.BooleanField(default=False)
+    angry = models.BooleanField(default=False)
+    good = models.BooleanField(default=False)
+    subsequent = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return str(self.article)
+
 #------------------------- 댓글 모델 -------------------------
 
 class Comment(models.Model):
