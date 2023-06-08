@@ -208,21 +208,21 @@ class CommentView(APIView):
             serializer = CommentCreateSerializer(comment, data=request.data)
             if serializer.is_valid():
                 serializer.save(user=request.user)
-                return Response({"message":"댓글 수정완료"}, status=status.HTTP_201_CREATED)
+                return Response({"message":"댓글 수정했습니다."}, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"message":"권한이 없습니다."},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message":"댓글 작성자만 수정할 수 있습니다."},status=status.HTTP_403_FORBIDDEN)
         
     # 댓글 삭제
     def delete(self, request, comment_id):
         comment = get_object_or_404(Comment, id=comment_id)
         if request.user == comment.user:
             comment.delete()
-            return Response({"message": "삭제완료!"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "댓글을 삭제하였습니다."}, status=status.HTTP_200_OK)
         else:
             return Response(
-                {"message": "댓글 작성자만 삭제 가능."}, status=status.HTTP_403_FORBIDDEN)
+                {"message": "댓글 작성자만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
         
 
 # ----- 댓글 반응 -----
@@ -244,7 +244,7 @@ class CommentLikeView(APIView):
             commentreaction.like.remove(user)
             comment.like_count -=1
             comment.save()
-            return Response("좋아요 취소", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소했습니다.", status=status.HTTP_200_OK)
         
         elif user in commentreaction.hate.all():
             commentreaction.hate.remove(user)
@@ -252,13 +252,13 @@ class CommentLikeView(APIView):
             comment.like_count +=1
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요 취소, 좋아요", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_200_OK)
         
         else:
             commentreaction.like.add(user)
             comment.like_count +=1
             comment.save()
-            return Response("좋아요", status=status.HTTP_200_OK)
+            return Response("좋아요를 했습니다.", status=status.HTTP_200_OK)
  
 
 class CommentHateView(APIView):
@@ -278,7 +278,7 @@ class CommentHateView(APIView):
             commentreaction.hate.remove(user)
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요 취소", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소했습니다.", status=status.HTTP_200_OK)
         
         elif user in commentreaction.like.all():
             commentreaction.like.remove(user)
@@ -286,12 +286,12 @@ class CommentHateView(APIView):
             comment.hate_count +=1
             comment.like_count -=1
             comment.save()
-            return Response("좋아요 취소, 싫어요", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_200_OK)
         
         else:
             commentreaction.hate.add(user)
             comment.hate_count +=1
             comment.save()
-            return Response("싫어요", status=status.HTTP_200_OK)
+            return Response("싫어요를 했습니다.", status=status.HTTP_200_OK)
     
 # ----- 댓글 끝 -----
