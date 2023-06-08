@@ -177,3 +177,18 @@ class ArticleSearchView(generics.ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
+
+
+# ----- 댓글 시작 -----
+
+class CommentView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # 게시글 댓글 보기
+    def get(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        comments = article.comment.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+# ----- 댓글 끝 -----
