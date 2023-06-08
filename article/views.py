@@ -213,5 +213,15 @@ class CommentView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message":"권한이 없습니다."},status=status.HTTP_400_BAD_REQUEST)
+        
+    # 댓글 삭제
+    def delete(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if request.user == comment.user:
+            comment.delete()
+            return Response({"message": "삭제완료!"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {"message": "댓글 작성자만 삭제 가능."}, status=status.HTTP_403_FORBIDDEN)
     
 # ----- 댓글 끝 -----
