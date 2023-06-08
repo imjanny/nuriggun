@@ -28,3 +28,10 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["subscribe"]
+
+class UserSerializer(serializers.ModelSerializer):
+    '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
+    class Meta:
+        model = User
+        fields = ('pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe')
+        read_only_fields = ('email',)
