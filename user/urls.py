@@ -24,5 +24,8 @@ urlpatterns = [
     # 프로필
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
 
+    # 이메일 인증 / 인증링크 클릭해서 사이트로 돌아오기
+    re_path(r'^account-confirm-email/$', VerifyEmailView.as_view(), name='account_email_verification_sent'),
+    re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', views.ConfirmEmailView.as_view(), name='account_confirm_email'),
 ]
 
