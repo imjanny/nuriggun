@@ -152,7 +152,7 @@ class ArticleReactionView(APIView):
 
         reaction = request.data.get('reaction')
 
-        if reaction in ['like', 'sad', 'angry', 'good', 'subsequent']:
+        if reaction in ['great', 'sad', 'angry', 'good', 'subsequent']:
             reaction_field = getattr(article, reaction) #getattr 아직 잘모르지만 나중에?
 
             if request.user in reaction_field.all():
