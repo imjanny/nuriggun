@@ -1,11 +1,7 @@
-import os
 from django.shortcuts import render, redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.http import HttpResponseRedirect
-from rest_framework.permissions import AllowAny
-from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
 from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 
@@ -15,8 +11,78 @@ from .models import User
 from user.serializers import (
     SubscribeSerializer,
     UserSerializer,
+    UserCreateSerializer,
+    EmailThread,
+    UserTokenObtainPairSerializer,
 )
 
+# 이메일 인증 import
+from base64 import urlsafe_b64encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
+from django.shortcuts import redirect
+from django.core.mail import EmailMessage
+from django.utils.encoding import force_bytes
+
+# 로그인 import
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+# ============회원가입=============
+class Util:
+    @staticmethod
+    def send_email(message):
+        email = EmailMessage(
+            subject=message["email_subject"],
+            body=message["email_body"],
+            to=[message["to_email"]],
+        )
+        EmailThread(email).start()
+
+class SignUpView(APIView):
+    def post(self, request):
+        serializer = UserCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+
+            uid = urlsafe_b64encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+
+            email = user.email
+            auth_url = f"http://localhost:8000/user/verify-email/{uid}/{token}/"
+            
+            email_body = "이메일 인증" + auth_url
+            message = {
+                "email_body": email_body,
+                "to_email": email,
+                "email_subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
+            }
+            Util.send_email(message)
+
+            return Response({"message": "가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        token_generator = PasswordResetTokenGenerator()
+
+        if user is not None and token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return redirect("http://127.0.0.1:5500/user/login.html")
+        else:
+            return redirect("/")
+
+# 로그인
+class LoginView(TokenObtainPairView):
+    serializer_class = UserTokenObtainPairSerializer
+
+# ========= 프로필 ===========
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -50,32 +116,6 @@ class UserView(APIView):
         else:
             return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST) 
         
-# 이메일인증 view
-class ConfirmEmailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, *args, **kwargs):
-        self.object = confirmation = self.get_object()
-        confirmation.confirm(self.request)
-        return HttpResponseRedirect("http://127.0.0.1:5500/login.html")  # 인증성공
-
-    def get_object(self, queryset=None):
-        key = self.kwargs["key"]
-        email_confirmation = EmailConfirmationHMAC.from_key(key)
-        if not email_confirmation:
-            if queryset is None:
-                queryset = self.get_queryset()
-            try:
-                email_confirmation = queryset.get(key=key.lower())
-            except EmailConfirmation.DoesNotExist:
-                return HttpResponseRedirect("http://127.0.0.1:5500/login.html")  # 인증실패
-        return email_confirmation
-
-    def get_queryset(self):
-        qs = EmailConfirmation.objects.all_valid()
-        qs = qs.select_related("email_address__user")
-        return qs
-
 
 # ----- 구독 시작 -----
 
