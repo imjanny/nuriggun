@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.kakao',
-    
+    'allauth.socialaccount.providers.github',
 ]
 
 REST_FRAMEWORK = {
@@ -162,11 +162,24 @@ MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
+
 
 CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000'
                         ,'http://localhost:5000',
-                        'http://localhost:8000']
+                        'http://localhost:8000',
+                        'http://127.0.0.1:8000',
+                        ]
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5000),
@@ -217,6 +230,8 @@ AUTHENTICATION_BACKENDS = [ # 소셜로그인
 
 # 사이트 1개만 사용
 SITE_ID = 1
+
+REST_USE_JWT = True
 
 # dj-rest-auth 3.0 버전 이후로는 이렇게 써야함
 # JWT_AUTH_HTTPONLY : 쿠키를 http only 여부

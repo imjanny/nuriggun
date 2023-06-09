@@ -1,7 +1,7 @@
 from user.models import User
 
 from rest_framework import serializers
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
 
 import threading
@@ -30,6 +30,15 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["subscribe"]
+        
+        
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["email"] = user.email
+        token["nickname"] = user.nickname
+        return token
 
 class UserSerializer(serializers.ModelSerializer):
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''

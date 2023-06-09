@@ -1,8 +1,11 @@
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from django.shortcuts import render, redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
+
 
 from .models import User
 
@@ -72,7 +75,7 @@ class VerifyEmailView(APIView):
         if user is not None and token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return redirect("http://127.0.0.1:5500/base.html/login.html")
+            return redirect("http://127.0.0.1:5500/user/login.html")
         else:
             return redirect("/")
 
@@ -146,3 +149,4 @@ class SubscribeView(APIView):
     
 # ----- 구독 끝 -----
 
+    
