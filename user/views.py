@@ -1,32 +1,89 @@
-import os
-import requests
+
 from django.shortcuts import render, redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
-from allauth.socialaccount.models import SocialAccount
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from django.http import HttpResponseRedirect, JsonResponse
-from rest_framework.permissions import AllowAny
-from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
 from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
-from dj_rest_auth.registration.views import SocialLoginView
-from allauth.socialaccount.providers.kakao import views as kakao_view
-from allauth.socialaccount.providers.github import views as github_view
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+
 
 from .models import User
 
 from user.serializers import (
     SubscribeSerializer,
     UserSerializer,
+    UserCreateSerializer,
+    EmailThread,
+    UserTokenObtainPairSerializer,
 )
 
+# 이메일 인증 import
+from base64 import urlsafe_b64encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
+from django.shortcuts import redirect
+from django.core.mail import EmailMessage
+from django.utils.encoding import force_bytes
+
+# 로그인 import
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+# ============회원가입=============
+class Util:
+    @staticmethod
+    def send_email(message):
+        email = EmailMessage(
+            subject=message["email_subject"],
+            body=message["email_body"],
+            to=[message["to_email"]],
+        )
+        EmailThread(email).start()
+
+class SignUpView(APIView):
+    def post(self, request):
+        serializer = UserCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+
+            uid = urlsafe_b64encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+
+            email = user.email
+            auth_url = f"http://localhost:8000/user/verify-email/{uid}/{token}/"
+            
+            email_body = "이메일 인증" + auth_url
+            message = {
+                "email_body": email_body,
+                "to_email": email,
+                "email_subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
+            }
+            Util.send_email(message)
+
+            return Response({"message": "가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        token_generator = PasswordResetTokenGenerator()
+
+        if user is not None and token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return redirect("http://127.0.0.1:5500/user/login.html")
+        else:
+            return redirect("/")
+
+# 로그인
+class LoginView(TokenObtainPairView):
+    serializer_class = UserTokenObtainPairSerializer
+
+# ========= 프로필 ===========
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -60,32 +117,6 @@ class UserView(APIView):
         else:
             return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST) 
         
-# 이메일인증 view
-class ConfirmEmailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, *args, **kwargs):
-        self.object = confirmation = self.get_object()
-        confirmation.confirm(self.request)
-        return HttpResponseRedirect("http://127.0.0.1:5500/login.html")  # 인증성공
-
-    def get_object(self, queryset=None):
-        key = self.kwargs["key"]
-        email_confirmation = EmailConfirmationHMAC.from_key(key)
-        if not email_confirmation:
-            if queryset is None:
-                queryset = self.get_queryset()
-            try:
-                email_confirmation = queryset.get(key=key.lower())
-            except EmailConfirmation.DoesNotExist:
-                return HttpResponseRedirect("http://127.0.0.1:5500/login.html")  # 인증실패
-        return email_confirmation
-
-    def get_queryset(self):
-        qs = EmailConfirmation.objects.all_valid()
-        qs = qs.select_related("email_address__user")
-        return qs
-
 
 # ----- 구독 시작 -----
 
@@ -118,147 +149,4 @@ class SubscribeView(APIView):
     
 # ----- 구독 끝 -----
 
-# 소셜 로그인
-
-# 카카오 로그인
-KAKAO_CALLBACK_URI = 'http://127.0.0.1:8000/user/kakao/callback/'
-
-def kakao_login(request):
-    client_id = os.environ.get("KAKAO_REST_API_KEY")
-    return redirect(f"https://kauth.kakao.com/oauth/authorize?client_id={client_id}&redirect_uri={KAKAO_CALLBACK_URI}&response_type=code&scope=account_email")
-
-# 카카오 콜백
-def kakao_callback(request):
-    client_id = os.environ.get("KAKAO_REST_API_KEY")
-    code = request.GET.get("code")
-
-    # code로 access token 요청
-    token_request = requests.get(f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={KAKAO_CALLBACK_URI}&code={code}")
-    token_response_json = token_request.json()
-
-    # 에러 발생 시 중단
-    #json 내에 error 라는게 none이거나 아니면 실행, 오류 
-    error = token_response_json.get("error", None)
-    if error is not None:
-        return JsonResponse({"error": "에러발생"}, status=400)
-    # JsonResponse는 response를 커스터마이징 하여 전달하고 싶을때, http status code에 더하여 메세지를 입력해서 전달할 수 있다.
-
-    access_token = token_response_json.get("access_token")
-    
-    # access token으로 카카오톡 프로필 요청
-    profile_request = requests.post(
-        "https://kapi.kakao.com/v2/user/me",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    profile_json = profile_request.json()
-
-    kakao_account = profile_json.get("kakao_account")
-    email = kakao_account.get("email", None) # 이메일!
-
-    if email is None:
-        return JsonResponse({"error": "이메일이 없습니다"}, status=status.HTTP_400_BAD_REQUEST)
-        
-    try:
-        user = User.objects.get(email=email)
-        social_user = SocialAccount.objects.get(user=user)
-
-        if social_user.provider != 'kakao':
-            return JsonResponse({'error': '카카오유저가 아님'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        #로그인이 잘 됏다는 리스폰
-        return JsonResponse({"success": "로그인성공"}, status=200)
-
-    except User.DoesNotExist:
-    # 유저 아이디 생성
-        new_user = User.objects.create_user(email=email, password=None,)
-        new_user.save()
-    
-        # 여기서 새로운 소셜 계정을 생성하고 저장하고, 새로운 사용자와 연결해야 합니다.
-        new_social_account = SocialAccount(user=new_user, provider="kakao", uid="...")
-        new_social_account.save()
-
-        return JsonResponse({"success": "사용자가 성공적으로 등록되었습니다"}, status=200)
-
-    except SocialAccount.DoesNotExist:
-        return JsonResponse({'error': '이메일이 소셜이메일이 아님'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class KakaoLogin(SocialLoginView):
-    adapter_class = kakao_view.KakaoOAuth2Adapter
-    callback_url = 'http://127.0.0.1:8000/user/kakao/callback/'
-    client_class = OAuth2Client
-    
-
-## 깃허브 로그인
-
-def github_login(request):
-    client_id = os.environ.get("GITHUB_CLIENT_KEY")
-    GITHUB_CALLBACK_URI = "http://127.0.0.1:8000/user/github/callback"
-    return redirect(f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={GITHUB_CALLBACK_URI}&scope=read:user")
-
-
-class GithubException(Exception):
-    pass
-
-def github_callback(request):
-    client_id = os.environ.get("GITHUB_CLIENT_KEY")
-    client_secret = os.environ.get("GIT_HUB_SECRET_KEY")
-    code = request.GET.get("code")
-
-    # code로 access token 요청
-    token_request = requests.get(f"https://github.com/login/oauth/access_token?client_id={client_id}&client_secret={client_secret}&code={code}")
-    token_response_json = token_request.json()
-
-    # 에러 발생 시 중단
-    #json 내에 error 라는게 none이거나 아니면 실행, 오류 
-    error = token_response_json.get("error", None)
-    if error is not None:
-        return JsonResponse({"error": "에러발생"}, status=400)
-    # JsonResponse는 response를 커스터마이징 하여 전달하고 싶을때, http status code에 더하여 메세지를 입력해서 전달할 수 있다.
-
-    access_token = token_response_json.get("access_token")
-    
-    # access token으로 깃허브 프로필 요청
-    profile_request = requests.post(
-        "https://api.github.com/user",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    profile_json = profile_request.json()
-
-    
-    github_account = profile_json.get("github_account")
-    email = github_account.get("email", None) # 이메일!
-
-    if email is None:
-        raise GithubException()
-        
-    try:
-        user = User.objects.get(email=email)
-        social_user = SocialAccount.objects.get(user=user)
-
-        if social_user.provider != 'github':
-            raise GithubException()
-        
-        #로그인이 잘 됏다는 리스폰
-        return redirect({"success": "로그인성공"}, status=200)
-
-    except User.DoesNotExist:
-    # 유저 아이디 생성
-        new_user = User.objects.create_user(email=email, password=None,)
-        new_user.save()
-    
-        # 여기서 새로운 소셜 계정을 생성하고 저장하고, 새로운 사용자와 연결해야 합니다.
-        new_social_account = SocialAccount(user=new_user, provider="github", uid="...")
-        new_social_account.save()
-
-        return JsonResponse({"success": "사용자가 성공적으로 등록되었습니다"}, status=200)
-
-    except SocialAccount.DoesNotExist:
-        raise GithubException()
-    
-    
-class GithubLogin(SocialLoginView):
-    adapter_class = github_view.OAuth2Adapter
-    callback_url = 'http://127.0.0.1:8000/user/github/callback/'
-    client_class = OAuth2Client
     
