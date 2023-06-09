@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.kakao',
     'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
 ]
 
 REST_FRAMEWORK = {

@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -108,7 +107,7 @@ class UserView(APIView):
             return Response({"message": "수정권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         
     def delete(self,request, user_id):
-        '''회원탈퇴 (=계정 비활성화)'''
+        '''회원탈퇴 (계정 비활성화)'''
         user = get_object_or_404(User, id=user_id)
         if request.user == user:
             user.is_active = False
@@ -146,7 +145,4 @@ class SubscribeView(APIView):
                 "subscribe": subscribes_serializer.data
             }
         )
-    
-# ----- 구독 끝 -----
-
     
