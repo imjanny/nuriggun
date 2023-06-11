@@ -32,13 +32,6 @@ class SubscribeSerializer(serializers.ModelSerializer):
         fields = ["subscribe"]
         
         
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token["email"] = user.email
-        token["nickname"] = user.nickname
-        return token
 
 class UserSerializer(serializers.ModelSerializer):
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
