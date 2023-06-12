@@ -17,5 +17,12 @@ urlpatterns = [
 
     # 프로필
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
+
+    # 쪽지
+    path('messages/inbox/', views.MessageInboxView.as_view(), name='message-inbox'),
+    path('messages/sent/', views.MessageSentView.as_view(), name='message-sent'),
+    path('messages/<int:message_id>/', views.MessageDetailView.get, name='message-detail'),
+    path('messages/<int:message_id>/delete/', views.MessageDetailView.delete, name='message-delete'),
+    path('messages/create/', views.message_create, name='message-create'),
 ]
 
