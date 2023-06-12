@@ -72,3 +72,13 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
         token["nickname"] = user.nickname
         return token
+
+# 쪽지
+
+from rest_framework import serializers
+from .models import Message
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'receiver', 'subject', 'content', 'timestamp']
