@@ -19,5 +19,12 @@ urlpatterns = [
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
     #소셜로그인 api
     path('kakao/login/', views.KakaoLoginView.as_view(), name='kakao_login'),
+
+    # 쪽지
+    path('messages/inbox/', views.MessageInboxView.as_view(), name='message-inbox'),
+    path('messages/sent/', views.MessageSentView.as_view(), name='message-sent'),
+    path('messages/<int:message_id>/', views.MessageDetailView.get, name='message-detail'),
+    path('messages/<int:message_id>/delete/', views.MessageDetailView.delete, name='message-delete'),
+    path('messages/create/', views.message_create, name='message-create'),
 ]
 
