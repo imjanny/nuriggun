@@ -34,10 +34,16 @@ class SubscribeSerializer(serializers.ModelSerializer):
         
 
 class UserSerializer(serializers.ModelSerializer):
+    subscribe_count = serializers.SerializerMethodField()
+    subscribe = serializers.StringRelatedField(many=True, required=False)
+
+    def get_subscribe_count(self, obj):
+        return obj.subscribe.count()
+
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
     class Meta:
         model = User
-        fields = ('pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe')
+        fields = ('id', 'pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe', 'subscribe_count')
         read_only_fields = ('email',)
 
 # =============== 회원가입(이메일인증) ==============   
