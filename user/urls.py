@@ -17,5 +17,7 @@ urlpatterns = [
 
     # 프로필
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
+    #소셜로그인 api
+    path('kakao/login/', views.KakaoLoginView.as_view(), name='kakao_login'),
 ]
 
