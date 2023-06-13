@@ -1,9 +1,11 @@
 from user.models import User
+from article.models import Article
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
 from .models import Message
 import threading
+from django.core.mail import EmailMessage
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -31,7 +33,11 @@ class SubscribeSerializer(serializers.ModelSerializer):
         model = User
         fields = ["subscribe"]
         
-        
+# =============== 프로필 ================
+class ProfileArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article 
+        fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
     subscribe_count = serializers.SerializerMethodField()
@@ -41,13 +47,37 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.subscribe.count()
 
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
+    user_articles = ProfileArticleSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
         fields = ('id', 'pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe', 'subscribe_count')
         read_only_fields = ('email',)
 
-# =============== 회원가입(이메일인증) ==============   
- 
+# =============== 이메일 비동기전송 ==============   
+class Util:
+    @staticmethod
+    def send_email(message):
+        email = EmailMessage(
+            subject=message["subject"],
+            body=message["message"],
+            to=[message["to_email"]],
+        )
+        EmailThread(email).start()
+
+    @staticmethod
+    def send_password_reset_email(user, reset_url):
+        subject = "비밀번호 재설정 제목"
+        message = f"비밀번호 재설정 링크: {reset_url}"
+        to_email = user.email
+
+        reset_message = {
+            "subject": subject,
+            "message": message,
+            "to_email": to_email, 
+        }
+        Util.send_email(reset_message)
+
 class EmailThread(threading.Thread):
     '''비동기전송 : 회원가입 시 이메일전송으로 인한 지연현상이 없어짐'''
     def __init__(self, email):
@@ -56,6 +86,9 @@ class EmailThread(threading.Thread):
 
     def run(self):
         self.email.send()
+
+
+# =============== 회원가입(이메일인증) ==============   
 
 class UserCreateSerializer(serializers.ModelSerializer):
     '''회원가입'''
@@ -78,7 +111,71 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
         token["nickname"] = user.nickname
         return token
+    
+#=========== 비밀번호 재설정 ============
 
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from rest_framework import exceptions
+
+class PasswordResetSerializer(serializers.Serializer):
+        email = serializers.EmailField()
+
+        def validate(self, attrs):
+            try:
+                email = attrs.get("email")
+                user = User.objects.get(email=email)
+                uidb64 = urlsafe_base64_encode(force_bytes(user.id))
+                token = PasswordResetTokenGenerator().make_token(user)
+
+                reset_url = f"http://localhost:8000/user/password/reset/check/{uidb64}/{token}/"
+        
+                Util.send_password_reset_email(user, reset_url)
+                return attrs
+
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"email": "잘못된 이메일입니다. 다시 입력해주세요."}
+                )
+
+class PasswordConfirmSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True,)
+    password2 = serializers.CharField(write_only=True,)
+    token = serializers.CharField(max_length=100,write_only=True,)
+    uidb64 = serializers.CharField(max_length=100,write_only=True,)
+
+    class Meta:
+        fields = ("password", "password2", "token", "uidb64")
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        password2 = attrs.get("password2")
+        token = attrs.get("token")
+        uidb64 = attrs.get("uidb64")
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+
+            if PasswordResetTokenGenerator().check_token(user, token) == False:
+                raise exceptions.AuthenticationFailed("토큰이 유효하지 않습니다.", 401)
+            if password != password2:
+                raise serializers.ValidationError(
+                    detail={"password2": "비밀번호가 일치하지 않습니다."}
+                )
+
+            user.set_password(password)
+            user.save()
+
+            return super().validate(attrs)
+
+        except User.DoesNotExist:
+            raise serializers.ValidationError(detail={"user": "존재하지 않는 회원입니다."})
+        
+#=========== 비밀번호 재설정 끝 ============    
+  
 # 쪽지
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
