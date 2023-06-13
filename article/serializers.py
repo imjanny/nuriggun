@@ -6,8 +6,8 @@ from article.models import Article, Comment
 
 class ArticleSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    article_created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    article_updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     reaction = serializers.SerializerMethodField()
 
 
@@ -39,7 +39,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'content', 'user', 'article_created_at', 'article_updated_at', 'reaction']
+        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction']
 
 
 
