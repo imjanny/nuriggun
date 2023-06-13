@@ -18,17 +18,20 @@ from user.serializers import (
     SubscribeSerializer,
     UserSerializer,
     UserCreateSerializer,
+    Util,
     EmailThread,
     UserTokenObtainPairSerializer,
+    PasswordResetSerializer,
+    PasswordConfirmSerializer
 )
 
 # 이메일 인증 import
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import redirect
 from django.core.mail import EmailMessage
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, DjangoUnicodeDecodeError, force_str
 
 # 로그인 import
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -37,17 +40,64 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from allauth.socialaccount.models import SocialAccount,SocialToken, SocialApp
 from rest_framework_simplejwt.tokens import RefreshToken
 
+# 비밀번호 재설정 import 
+from django.utils.translation import gettext_lazy as _
+from dj_rest_auth.views import PasswordResetView, PasswordResetConfirmView
+from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+import base64
+import binascii
+from django.http import HttpResponseRedirect
+
+# ============비밀번호 재설정=============
+
+# 이메일 보내기
+class PasswordResetView(APIView):
+        def post(self, request):
+            serializer = PasswordResetSerializer(data=request.data)
+
+            if serializer.is_valid():
+                return Response({"message": "비밀번호 재설정 이메일 전송"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 비밀번호 재설정 토큰 확인
+class PasswordTokenCheckView(APIView):
+    def get(self, request, uidb64, token):
+        print("토큰체크 실행확인")
+        try:     
+            # user_id = force_str(urlsafe_b64decode(uidb64))
+            user_id = urlsafe_base64_decode(uidb64).decode()
+            print(user_id)
+
+            user = get_object_or_404(User, id=user_id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                # return Response(
+                #     {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
+                # )
+                return redirect("http://localhost:5500/user/password_reset_failed.html")
+
+            # return Response(
+            #     {"uidb64": uidb64, "token": token}, status=status.HTTP_200_OK
+            # )
+            reset_url = f"http://localhost:5500/user/password_reset_confirm.html?id={uidb64}&token={token}"
+            return redirect(reset_url)
+
+        except (UnicodeDecodeError) as identifier:
+            return Response(
+                {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+# 비밀번호 재설정
+class PasswordResetConfirmView(APIView):
+    def put(self, request):
+        serializer = PasswordConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response({"message": "비밀번호 재설정 완료"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 # ============회원가입=============
-class Util:
-    @staticmethod
-    def send_email(message):
-        email = EmailMessage(
-            subject=message["email_subject"],
-            body=message["email_body"],
-            to=[message["to_email"]],
-        )
-        EmailThread(email).start()
 
 class SignUpView(APIView):
     def post(self, request):
@@ -55,17 +105,17 @@ class SignUpView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            uid = urlsafe_b64encode(force_bytes(user.pk))
+            user_id = urlsafe_b64encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
 
             email = user.email
-            auth_url = f"http://localhost:8000/user/verify-email/{uid}/{token}/"
+            auth_url = f"http://localhost:8000/user/verify-email/{user_id}/{token}/"
             
             email_body = "이메일 인증" + auth_url
             message = {
-                "email_body": email_body,
+                "subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
+                "message": email_body,
                 "to_email": email,
-                "email_subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
             }
             Util.send_email(message)
 
@@ -85,9 +135,9 @@ class VerifyEmailView(APIView):
         if user is not None and token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return redirect("http://127.0.0.1:5500/user/login.html")
+            return redirect("http://localhost:5500/user/login.html")
         else:
-            return redirect("/")
+            return redirect("http://localhost:5500/user/password_reset_failed.html")
 
 # 로그인
 class LoginView(TokenObtainPairView):
