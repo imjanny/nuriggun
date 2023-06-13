@@ -15,6 +15,8 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 import my_settings
+from corsheaders.defaults import default_methods
+
 
 DATABASES = my_settings.DATABASES
 
@@ -57,9 +59,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.kakao',
-    'allauth.socialaccount.providers.google',
 ]
 
 REST_FRAMEWORK = {
@@ -165,20 +165,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'http://127.0.0.1:5500',
-]
-
-CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
+    'http://127.0.0.1:5500',
+    'http://localhost:5000',
+]
+
+CSRF_TRUSTED_ORIGINS  =  [ 
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:5500',
+    'http://localhost:5000',
+]
+
+CORS_ALLOW_METHODS = list(default_methods) + [
+    "",
 ]
 
 
-CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000'
-                        ,'http://localhost:5000',
-                        'http://localhost:8000',
-                        'http://127.0.0.1:8000',
-                        ]
 
 
 SIMPLE_JWT = {
@@ -255,10 +259,9 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None #유저 네임 필드가 없어도 됨
 ACCOUNT_USERNAME_REQUIRED = False # 아이디로 로그인 하지않고 
 ACCOUNT_EMAIL_REQUIRED = True # 이메일로 로그인하게 만듦
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
-SOCIALACCOUNT_LOGIN_ON_GET = True #로그인 요청시 다시 한번 묻는 작업 패스
-ACCOUNT_LOGOUT_ON_GET = True  #로그아웃 요청시 다시 묻는 작업 패스
-# LOGIN_REDIRECT_URL = 'main' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
-# ACCOUNT_LOGOUT_REDIRECT_URL = 'index' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
+ACCOUNT_EMAIL_VERIFICATION = "none"
+LOGIN_REDIRECT_URL = '/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
+ACCOUNT_LOGOUT_REDIRECT_URL = '/' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com' # 메일 호스트 서버
@@ -280,5 +283,5 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-LOGIN_REDIRECT_URL = '/'   # social login redirect
+LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/login.html'   # social login redirect
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # logout redirect

@@ -1,12 +1,12 @@
 from user.models import User
-
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
-
+from .models import Message
 import threading
-
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
 # 구독
 class SubscribeSerializer(serializers.ModelSerializer):
     subscribe = serializers.SerializerMethodField()
@@ -78,3 +78,9 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
         token["nickname"] = user.nickname
         return token
+
+# 쪽지
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'receiver', 'subject', 'content', 'timestamp']
