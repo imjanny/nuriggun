@@ -1,9 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
+from rest_framework import generics
+from .models import Message
+from .serializers import MessageSerializer
 
 
 from .models import User
@@ -145,4 +149,54 @@ class SubscribeView(APIView):
                 "subscribe": subscribes_serializer.data
             }
         )
+
+
+# 쪽지 관련 view
+
+'''받은 쪽지함'''
+class MessageInboxView(generics.ListAPIView):
+    serializer_class = MessageSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.filter(receiver=user)
+
+
+'''보낸 쪽지함'''
+class MessageSentView(generics.ListAPIView):
+    serializer_class = MessageSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.filter(sender=user)
+
+
+class MessageDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    '''쪽지 보기'''
+    def get(self, request, message_id):
+        message = get_object_or_404(Message, id=message_id)
+        serializer = MessageSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    '''쪽지 삭제 하기'''
+    def delete(self, request, message_id):
+        message = get_object_or_404(Message, id=message_id)
+        if request.method == 'POST':
+            message.delete()
+            return Response({"message": "삭제 완료!"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
+
+''' 쪽지 보내기 '''
+@api_view(['POST'])
+def message_create(request):
+    serializer = MessageSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
