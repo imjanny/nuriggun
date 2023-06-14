@@ -1,6 +1,6 @@
 import os
 import requests
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -48,7 +48,8 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 import base64
 import binascii
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+
 
 # ============비밀번호 재설정=============
 
@@ -211,6 +212,14 @@ class MessageInboxView(generics.ListAPIView):
         user = self.request.user
         return Message.objects.filter(receiver=user)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        if self.request.is_ajax():
+            return JsonResponse(serializer.data, safe=False)
+        else:
+            return render(request, 'message_inbox.html', {'messages': serializer.data})
+
 
 '''보낸 쪽지함'''
 class MessageSentView(generics.ListAPIView):
@@ -219,6 +228,14 @@ class MessageSentView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return Message.objects.filter(sender=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        if self.request.is_ajax():
+            return JsonResponse(serializer.data, safe=False)
+        else:
+            return render(request, 'message_sent.html', {'messages': serializer.data})
 
 
 class MessageView(APIView):

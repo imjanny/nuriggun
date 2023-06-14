@@ -15,7 +15,6 @@ urlpatterns = [
 
     # 로그인
     path("login/", views.LoginView.as_view(), name="login_view"),
-    
 
     # 비밀번호 재설정 URL
     path('password/reset/', views.PasswordResetView.as_view(), name='rest_password_reset_view'),
@@ -39,6 +38,6 @@ urlpatterns = [
     path('messages/sent/', views.MessageSentView.as_view(), name='message_sent'),
     path('messages/create/', views.MessageView.as_view(), name='message_create'),
     path('messages/<int:message_id>/', views.MessageView.as_view(), name='message_detail'),
-    path('messages/<int:message_id>/delete/', views.MessageView.as_view(), name='message_delete'),
+    #path('messages/<int:message_id>/delete/', views.MessageView.as_view(), name='message_delete'),
 ]
 

@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,visualstudiocode,python,pycharm,django
 my_settings.py
 nuriggun/my_settings.py
+nuriggun/.env
+venv
 ### Django ###
 *.log
 *.pot
@@ -136,7 +138,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+nuriggun/.env
 .venv
 env/
 venv/

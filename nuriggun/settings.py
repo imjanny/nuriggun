@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 import my_settings
 from corsheaders.defaults import default_methods
 
+import json
+from django.core.exceptions import ImproperlyConfigured
+
 
 DATABASES = my_settings.DATABASES
 
@@ -28,9 +31,23 @@ load_dotenv(os.path.join(PROJECT_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+# SECRET_KEY 위치에 해당 내용 복붙
+secret_file = os.path.join(BASE_DIR, "secrets.json")  # secrets.json 파일 위치
+
+with open(secret_file) as f:
+    secrets = json.loads(f.read())
+
+
+def get_secret(setting, secrets=secrets):
+    try:
+        return secrets[setting]
+    except KeyError:
+        error_msg = "Set the {} environment variable".format(setting)
+        raise ImproperlyConfigured(error_msg)
+
+
+SECRET_KEY = get_secret("SECRET_KEY")  # SECRET_KEY 가져오기
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
