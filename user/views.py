@@ -76,7 +76,7 @@ class PasswordTokenCheckView(APIView):
             reset_url = f"http://localhost:5500/user/password_reset_confirm.html?id={uidb64}&token={token}"
             return redirect(reset_url)
 
-        except (UnicodeDecodeError) as identifier:
+        except UnicodeDecodeError:
             return Response(
                 {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
             )

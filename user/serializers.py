@@ -59,9 +59,9 @@ class Util:
     @staticmethod
     def send_email(message):
         email = EmailMessage(
-            subject=message["subject"],
-            body=message["message"],
-            to=[message["to_email"]],
+            subject = message["subject"],
+            body = message["message"],
+            to = [message["to_email"]],
         )
         EmailThread(email).start()
 
