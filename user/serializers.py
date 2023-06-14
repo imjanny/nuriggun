@@ -231,3 +231,8 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'sender', 'receiver', 'subject', 'content', 'timestamp']
+        
+        
+class KakaoLoginSerializer(serializers.Serializer):
+    code = serializers.CharField(required=True)
+    access_token = serializers.CharField(required=False)
