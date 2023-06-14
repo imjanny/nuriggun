@@ -159,6 +159,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token["email"] = user.email
         token["nickname"] = user.nickname
+        token["profile_img"] = user.profile_img.url if user.profile_img else None
         return token
     
 #=========== 비밀번호 재설정 ============
