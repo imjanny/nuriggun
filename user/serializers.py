@@ -47,7 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.subscribe.count()
 
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
-    user_articles = ProfileArticleSerializer(many=True, read_only=True)
+    # user_articles = ProfileArticleSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -181,3 +181,8 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'sender', 'receiver', 'subject', 'content', 'timestamp']
+        
+        
+class KakaoLoginSerializer(serializers.Serializer):
+    code = serializers.CharField(required=True)
+    access_token = serializers.CharField(required=False)
