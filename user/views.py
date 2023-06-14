@@ -2,7 +2,6 @@ import os
 import requests
 from django.shortcuts import redirect, get_object_or_404
 from rest_framework.decorators import api_view
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -11,6 +10,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework import generics
 from .models import Message
 from .serializers import MessageSerializer
+
 
 from .models import User
 
@@ -37,7 +37,7 @@ from django.utils.encoding import force_bytes, DjangoUnicodeDecodeError, force_s
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # 소셜 로그인 import
-from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
+from allauth.socialaccount.models import SocialAccount,SocialToken, SocialApp
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # 비밀번호 재설정 import 
@@ -49,46 +49,37 @@ import base64
 import binascii
 from django.http import HttpResponseRedirect
 
-
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
 class PasswordResetView(APIView):
-    def post(self, request):
-        serializer = PasswordResetSerializer(data=request.data)
+        def post(self, request):
+            serializer = PasswordResetSerializer(data=request.data)
 
-        if serializer.is_valid():
-            return Response({"message": "비밀번호 재설정 이메일 전송"}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            if serializer.is_valid():
+                return Response({"message": "비밀번호 재설정 이메일 전송"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # 비밀번호 재설정 토큰 확인
 class PasswordTokenCheckView(APIView):
     def get(self, request, uidb64, token):
         print("토큰체크 실행확인")
-        try:
-            # user_id = force_str(urlsafe_b64decode(uidb64))
+        try:     
             user_id = urlsafe_base64_decode(uidb64).decode()
             print(user_id)
 
             user = get_object_or_404(User, id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
-                # return Response(
-                #     {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
-                # )
+
                 return redirect("http://localhost:5500/user/password_reset_failed.html")
 
-            # return Response(
-            #     {"uidb64": uidb64, "token": token}, status=status.HTTP_200_OK
-            # )
             reset_url = f"http://localhost:5500/user/password_reset_confirm.html?id={uidb64}&token={token}"
             return redirect(reset_url)
 
-        except (UnicodeDecodeError) as identifier:
+        except UnicodeDecodeError:
             return Response(
                 {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
             )
-
 
 # 비밀번호 재설정
 class PasswordResetConfirmView(APIView):
@@ -97,7 +88,6 @@ class PasswordResetConfirmView(APIView):
         if serializer.is_valid():
             return Response({"message": "비밀번호 재설정 완료"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # ============회원가입=============
 
@@ -112,7 +102,7 @@ class SignUpView(APIView):
 
             email = user.email
             auth_url = f"http://localhost:8000/user/verify-email/{user_id}/{token}/"
-
+            
             email_body = "이메일 인증" + auth_url
             message = {
                 "subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
@@ -124,7 +114,6 @@ class SignUpView(APIView):
             return Response({"message": "가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class VerifyEmailView(APIView):
     def get(self, request, uidb64, token):
@@ -142,11 +131,9 @@ class VerifyEmailView(APIView):
         else:
             return redirect("http://localhost:5500/user/password_reset_failed.html")
 
-
 # 로그인
 class LoginView(TokenObtainPairView):
     serializer_class = UserTokenObtainPairSerializer
-
 
 # ========= 프로필 ===========
 class UserView(APIView):
@@ -158,7 +145,7 @@ class UserView(APIView):
         user = get_object_or_404(User, id=user_id)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+        
     def patch(self, request, user_id):
         '''프로필 수정하기'''
         user = get_object_or_404(User, id=user_id)
@@ -171,8 +158,8 @@ class UserView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "수정권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-
-    def delete(self, request, user_id):
+        
+    def delete(self,request, user_id):
         '''회원탈퇴 (계정 비활성화)'''
         user = get_object_or_404(User, id=user_id)
         if request.user == user:
@@ -180,10 +167,10 @@ class UserView(APIView):
             user.save()
             return Response({"message": "탈퇴완료"}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST) 
+        
 
-        # ----- 구독 시작 -----
-
+# ----- 구독 시작 -----
 
 class SubscribeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -216,8 +203,6 @@ class SubscribeView(APIView):
 # 쪽지 관련 view
 
 '''받은 쪽지함'''
-
-
 class MessageInboxView(generics.ListAPIView):
     serializer_class = MessageSerializer
 
@@ -227,8 +212,6 @@ class MessageInboxView(generics.ListAPIView):
 
 
 '''보낸 쪽지함'''
-
-
 class MessageSentView(generics.ListAPIView):
     serializer_class = MessageSerializer
 
@@ -237,31 +220,16 @@ class MessageSentView(generics.ListAPIView):
         return Message.objects.filter(sender=user)
 
 
-class MessageView(APIView):
+class MessageDetailView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    authentication_classes = [JWTAuthentication]
 
     '''쪽지 보기'''
-
     def get(self, request, message_id):
         message = get_object_or_404(Message, id=message_id)
         serializer = MessageSerializer(message)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    '''쪽지 보내기(작성 하기)'''
-    def post(self, request):
-        serializer = MessageSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "쪽지를 성공적으로 보냈습니다.", "message_id": serializer.instance.id},
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     '''쪽지 삭제 하기'''
-
     def delete(self, request, message_id):
         message = get_object_or_404(Message, id=message_id)
         if request.method == 'POST':
@@ -271,6 +239,16 @@ class MessageView(APIView):
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
 
+''' 쪽지 보내기 '''
+@api_view(['POST'])
+def message_create(request):
+    serializer = MessageSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
 # 소셜 로그인
 
@@ -283,7 +261,7 @@ class KakaoLoginView(APIView):
 
             # 인증 코드를 사용하여 액세스 토큰을 얻기 위해 카카오 서버에 요청
             access_token = requests.post(
-                "https://kauth.kakao.com/oauth/token",
+                "https://kauth.kakao.com/oauth/token", 
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data={
                     "grant_type": "authorization_code",
@@ -296,7 +274,7 @@ class KakaoLoginView(APIView):
             access_token = access_token.json().get("access_token")
 
             # 액세스 토큰을 사용하여 사용자 정보를 얻기 위해 카카오 서버에 요청
-            user_data = requests.get(
+            user_data = requests.get( 
                 "https://kapi.kakao.com/v2/user/me",
                 headers={
                     "Authorization": f"Bearer {access_token}",

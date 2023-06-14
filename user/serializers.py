@@ -47,7 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.subscribe.count()
 
     '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
-    user_articles = ProfileArticleSerializer(many=True, read_only=True)
+    # user_articles = ProfileArticleSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -59,9 +59,9 @@ class Util:
     @staticmethod
     def send_email(message):
         email = EmailMessage(
-            subject=message["subject"],
-            body=message["message"],
-            to=[message["to_email"]],
+            subject = message["subject"],
+            body = message["message"],
+            to = [message["to_email"]],
         )
         EmailThread(email).start()
 
@@ -89,16 +89,65 @@ class EmailThread(threading.Thread):
 
 
 # =============== 회원가입(이메일인증) ==============   
+import re
 
 class UserCreateSerializer(serializers.ModelSerializer):
     '''회원가입'''
     class Meta:
         model = User
         fields = "__all__"
+        extra_kwargs = {
+            'email': {
+                'error_messages': {
+                    'required': '이메일을 입력해주세요.',
+                    'blank': '이메일을 입력해주세요.',
+                    'invalid': '잘못된 이메일 형식입니다.',
+                }
+            },
+            'password': {
+                'error_messages': {
+                    'required': '비밀번호를 입력해주세요.',
+                    'blank': '비밀번호를 입력해주세요.',
+                }
+            },
+        }
 
+    def validate_email(self, value):
+        # 이메일 정규식 : @기호 필요 / 마침표 필요
+        email_pattern = r'^[\w.-]+@[a-zA-Z.-]+\.[a-zA-Z]{2,}$'
+        
+        if not re.match(email_pattern, value):
+            raise serializers.ValidationError(self.fields['email'].error_messages['invalid'],
+                code='invalid_email')
+        
+        return value
+    
+        
+    def validate_nickname(self, value):
+        if len(value) > 8:
+            raise serializers.ValidationError("닉네임은 8자 이하여야 합니다.")
+        
+        # 부적절한 닉네임 필터링
+        blocked_words = ['shit', '욕설2', '욕설3']  # 부적절한 단어 목록
+        
+        for word in blocked_words:
+            if re.search(r'\b{}\b'.format(re.escape(word)), value, re.IGNORECASE):
+                raise serializers.ValidationError("닉네임에 부적절한 단어가 포함되어 있습니다.")
+        
+        return value
+    
+    def validate_password(self, value):
+        # 비밀번호 정규식 : 8자 이상 / 숫자+영문 조합
+        password_pattern = r'^(?=.*\d)(?=.*[a-zA-Z]).{8,}$'
+
+        if not re.match(password_pattern, value):
+            raise serializers.ValidationError("비밀번호는 8자 이상이여야 하며 영문과 숫자를 포함하여야 합니다.")
+        
+        return value
+    
     def create(self, validated_data):
         user = super().create(validated_data)
-        password = user.password
+        password = validated_data.get('password')
         user.set_password(password)
         user.save()
         return user
@@ -110,6 +159,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token["email"] = user.email
         token["nickname"] = user.nickname
+        token["profile_img"] = user.profile_img.url if user.profile_img else None
         return token
     
 #=========== 비밀번호 재설정 ============

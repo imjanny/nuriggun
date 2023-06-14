@@ -45,10 +45,15 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        return obj.user.nickname
+    
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "created_at", "updated_at")
+                  "CATEGORIES","image","created_at", "updated_at")
 
    
 
@@ -62,7 +67,7 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title",
-                  "content", "image", "category")
+                  "content", "image", "CATEGORIES")
    
 
 
