@@ -191,8 +191,14 @@ class PasswordResetSerializer(serializers.Serializer):
                 )
 
 class PasswordConfirmSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True,)
-    password2 = serializers.CharField(write_only=True,)
+    password = serializers.CharField(write_only=True, error_messages={
+        'required': '비밀번호를 입력해주세요.',
+        'blank': '비밀번호를 입력해주세요.',
+    })
+    password2 = serializers.CharField(write_only=True, error_messages={
+        'required': '비밀번호 확인을 입력해주세요.',
+        'blank': '비밀번호 확인을 입력해주세요.',
+    })
     token = serializers.CharField(max_length=100,write_only=True,)
     uidb64 = serializers.CharField(max_length=100,write_only=True,)
 
@@ -204,6 +210,7 @@ class PasswordConfirmSerializer(serializers.Serializer):
         password2 = attrs.get("password2")
         token = attrs.get("token")
         uidb64 = attrs.get("uidb64")
+        password_pattern = r'^(?=.*\d)(?=.*[a-zA-Z]).{8,}$'
 
         try:
             user_id = force_str(urlsafe_base64_decode(uidb64))
@@ -215,7 +222,9 @@ class PasswordConfirmSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     detail={"password2": "비밀번호가 일치하지 않습니다."}
                 )
-
+            if not re.match(password_pattern, password):
+                raise serializers.ValidationError("비밀번호는 최소 8자 이상이어야 하며, 숫자와 문자의 조합이어야 합니다.")
+        
             user.set_password(password)
             user.save()
 
