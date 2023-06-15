@@ -2,6 +2,21 @@ from rest_framework import serializers
 from article.models import Article, Comment
 
 
+
+class HomeSerializer(serializers.ModelSerializer):
+    '''메인페이지 용 시리얼라이저'''
+    count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    
+    def get_count(self, obj):
+        return Article.objects.count()
+    
+    def get_comments_count(self, obj):
+        return obj.comment.count()
+    
+    class Meta:
+        model = Article
+        fields = "__all__"
 #---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -14,28 +29,39 @@ class ArticleSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
 
+
     def get_reaction(self, obj):
         reaction_data = {
-            'great': 0,
-            'sad': 0,
-            'angry': 0,
-            'good': 0,
-            'subsequent': 0
+            'great': obj.great.count(),
+            'sad': obj.sad.count(),
+            'angry': obj.angry.count(),
+            'good': obj.good.count(),
+            'subsequent': obj.subsequent.count()
         }
-        reaction = obj.articlereaction_set.all()
-        for reaction in reaction:
-            if reaction.great:
-                reaction_data['great'] += 1
-            elif reaction.sad:
-                reaction_data['sad'] += 1
-            elif reaction.angry:
-                reaction_data['angry'] += 1
-            elif reaction.good:
-                reaction_data['good'] += 1
-            elif reaction.subsequent:
-                reaction_data['subsequent'] += 1
         return reaction_data
     
+
+    # def get_reaction(self, obj):
+    #     reaction_data = {
+    #         'great': 0,
+    #         'sad': 0,
+    #         'angry': 0,
+    #         'good': 0,
+    #         'subsequent': 0
+    #     }
+    #     reactions = obj.articlereaction_set.all()
+    #     for reaction in reactions:
+    #         if reaction.great:
+    #             reaction_data['great'] += 1
+    #         elif reaction.sad:
+    #             reaction_data['sad'] += 1
+    #         elif reaction.angry:
+    #             reaction_data['angry'] += 1
+    #         elif reaction.good:
+    #             reaction_data['good'] += 1
+    #         elif reaction.subsequent:
+    #             reaction_data['subsequent'] += 1
+    #     return reaction_data
 
     class Meta:
         model = Article
