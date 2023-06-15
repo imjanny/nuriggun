@@ -61,13 +61,11 @@ class ArticleView(APIView):
     
 # ------------------------------------ 게시글 목록 -------------------------------------
     
-    def get(self, request):  
-        category = request.GET.get('category')
-
-        if category:  
-            articles = Article.objects.filter(category=category) # 카테고리 있는 경우 해당 카테고리의 게시글 보여줌
-        else:  
-            articles = Article.objects.all()# 카테고리 없는 경우 모든 게시글 보여주기
+    def get(self, request, category=None):
+        if category:
+            articles = Article.objects.filter(category=category)
+        else:
+            articles = Article.objects.all()
 
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
