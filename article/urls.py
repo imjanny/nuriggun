@@ -13,7 +13,9 @@ urlpatterns = [
     path('scrap/', views.ScrapListView.as_view(),name='scrap_view'),  # 북마크 한 게시글
     path('<int:article_id>/scrap/', views.ScrapView.as_view(),name='scrap_view'),  # 북마크 기능
     path("search/", views.ArticleSearchView.as_view(), name="article_search"), # 검색 기능
-    path("<int:article_id>/reaction/", views.ArticleReactionView.as_view(),name="article_reaction")
+    path("<int:article_id>/reaction/", views.ArticleReactionView.as_view(),name="article_reaction"),
+    # 카테고리 url
+    path("<str:category>/", views.ArticleView.as_view(), name="category_view"),
 ]
 
 

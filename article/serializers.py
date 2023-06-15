@@ -11,7 +11,6 @@ class ArticleSerializer(serializers.ModelSerializer):
     reaction = serializers.SerializerMethodField()
 
 
-
     def get_user(self, obj):
         return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
 
@@ -36,10 +35,11 @@ class ArticleSerializer(serializers.ModelSerializer):
             elif reaction.subsequent:
                 reaction_data['subsequent'] += 1
         return reaction_data
+    
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction']
+        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction', 'category', 'image']
 
 
 

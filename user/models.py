@@ -35,7 +35,7 @@ class User(AbstractBaseUser):
         ('생활/문화', 'culture'),
         ('스포츠', 'sport'),
         ('날씨', 'weather'),
-        ('세계', 'wrold')
+        ('world', 'world')
     ]
 
     email = models.EmailField("email address", max_length=25, unique=True, null=False, blank=False)
