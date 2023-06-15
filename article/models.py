@@ -86,7 +86,7 @@ class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comment")
     comment = models.TextField("댓글")
     comment_created_at = models.DateTimeField(auto_now_add=True)
-    comment_updated_at = models.DateTimeField(auto_now_add=True)
+    comment_updated_at = models.DateTimeField(auto_now=True)
     like_count = models.PositiveIntegerField(default=0)
     hate_count = models.PositiveIntegerField(default=0)
 

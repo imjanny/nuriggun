@@ -65,7 +65,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction']
+        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction', 'image']
 
 
 
@@ -100,14 +100,13 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
 
 class ArticleListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    changed_image = serializers.ImageField()
 
     def get_user(self, obj):
         return {"nickname": obj.user.nickname, "id": obj.user.id,}
 
     class Meta:
         model = Article
-        fields = ["id", "title", "user", "image",]
+        fields = ["id", "title", "user", "image", "created_at"]
          
 
 
