@@ -29,15 +29,15 @@ class Article(models.Model):
     
     CATEGORIES = (
 
-        ('it/과학', 'it'),
+        ('it', 'it'),
         ('경제', 'economy'),
         ('생활/문화', 'culture'),
         ('스포츠', 'sport'),
         ('날씨', 'weather'),
-        ('세계', 'wrold'),
+        ('세계', 'world'),
 
     )
-    category = models.CharField("카테고리", choices=CATEGORIES, max_length=10)
+    category = models.CharField("카테고리", choices=CATEGORIES, max_length=10, blank=False, null=False)
 
 #------------------------- 스크랩(북마크) -------------------------
     
