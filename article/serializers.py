@@ -2,6 +2,21 @@ from rest_framework import serializers
 from article.models import Article, Comment
 
 
+
+class HomeSerializer(serializers.ModelSerializer):
+    '''메인페이지 용 시리얼라이저'''
+    count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    
+    def get_count(self, obj):
+        return Article.objects.count()
+    
+    def get_comments_count(self, obj):
+        return obj.comment.count()
+    
+    class Meta:
+        model = Article
+        fields = "__all__"
 #---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
