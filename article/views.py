@@ -194,13 +194,11 @@ class ArticleReactionView(APIView):
             if request.user in reaction_field.all():
                 # 사용자가 이미 반응을 한 상태이므로 반응을 취소
                 reaction_field.remove(request.user)
-                message = "반응을 취소했습니다."
+                return Response({"message": "반응을 취소했습니다."}, status=status.HTTP_200_OK)
             else:
                 # 사용자가 반응을 하지 않은 상태이므로 반응을 추가
                 reaction_field.add(request.user)
-                message = "반응을 눌렀습니다."
-
-            return Response({"message": message}, status=status.HTTP_200_OK)
+                return Response({"message": "반응을 눌렀습니다."}, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "유효하지 않은 반응 타입입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -280,7 +278,7 @@ class CommentLikeView(APIView):
             commentreaction.like.remove(user)
             comment.like_count -=1
             comment.save()
-            return Response("좋아요를 취소했습니다.", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소했습니다.", status=status.HTTP_202_ACCEPTED)
         
         elif user in commentreaction.hate.all():
             commentreaction.hate.remove(user)
@@ -288,7 +286,7 @@ class CommentLikeView(APIView):
             comment.like_count +=1
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_201_CREATED)
         
         else:
             commentreaction.like.add(user)
@@ -314,7 +312,7 @@ class CommentHateView(APIView):
             commentreaction.hate.remove(user)
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요를 취소했습니다.", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소했습니다.", status=status.HTTP_202_ACCEPTED)
         
         elif user in commentreaction.like.all():
             commentreaction.like.remove(user)
@@ -322,7 +320,7 @@ class CommentHateView(APIView):
             comment.hate_count +=1
             comment.like_count -=1
             comment.save()
-            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_201_CREATED)
         
         else:
             commentreaction.hate.add(user)
