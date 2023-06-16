@@ -9,8 +9,7 @@ from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework import generics
 from .models import Message
-from .serializers import MessageSerializer
-
+from .serializers import MessageSerializer, MessageCreateSerializer, MessageDetailSerializer
 
 from .models import User
 
@@ -242,34 +241,38 @@ class MessageView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     authentication_classes = [JWTAuthentication]
 
-    '''쪽지 보기'''
-
     def get(self, request, message_id):
+        """상세 쪽지 보기"""
         message = get_object_or_404(Message, id=message_id)
-        serializer = MessageSerializer(message)
+        serializer = MessageDetailSerializer(message)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    '''쪽지 보내기(작성 하기)'''
     def post(self, request):
-        serializer = MessageSerializer(data=request.data)
+        """쪽지 보내기(작성하기)"""
+        serializer = MessageCreateSerializer(
+            data=request.data, context={"request": request}
+        )
+
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(sender=request.user)
             return Response(
-                {"message": "쪽지를 성공적으로 보냈습니다.", "message_id": serializer.instance.id},
+                {"message": "쪽지를 보냈습니다.", "messgae_id": serializer.instance.id},
                 status=status.HTTP_200_OK,
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    '''쪽지 삭제 하기'''
-
     def delete(self, request, message_id):
-        message = get_object_or_404(Message, id=message_id)
-        if request.method == 'POST':
-            message.delete()
-            return Response({"message": "삭제 완료!"}, status=status.HTTP_204_NO_CONTENT)
+        """게시글 삭제"""
+        messgae = get_object_or_404(Message, id=message_id)
+
+        if request.user == messgae.user:
+            messgae.delete()
+            return Response(
+                {"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT
+            )
         else:
-            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+            return Response("쪽지를 삭제할 권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
 # 소셜 로그인
 

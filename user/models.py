@@ -91,9 +91,23 @@ class Message(models.Model):
 
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
-    subject = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(
+        "이미지", blank=True, null=True, upload_to="image/message/%m/%d/"
+    )
 
     def __str__(self):
-        return self.subject
+        return self.title
+
+# class Images(models.Model):
+#     article = models.ForeignKey(
+#         Message, blank=False, null=False, verbose_name="쪽지", on_delete=models.CASCADE
+#     )
+#     image = models.ImageField(
+#         "이미지", blank=True, null=True, upload_to="image/message/%m/%d/"
+#     )
+#
+#     def __str__(self):
+#         return str(self.article)
