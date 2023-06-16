@@ -284,7 +284,7 @@ ACCOUNT_USERNAME_REQUIRED = False # 아이디로 로그인 하지않고
 ACCOUNT_EMAIL_REQUIRED = True # 이메일로 로그인하게 만듦
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = '/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
+LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
 ACCOUNT_LOGOUT_REDIRECT_URL = '/' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -306,6 +306,3 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
-LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/base/login.html'   # social login redirect
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # logout redirect
