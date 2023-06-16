@@ -270,7 +270,7 @@ class KakaoLoginView(APIView):
             data={
                 "grant_type": "authorization_code",
                 "client_id": os.environ.get("KAKAO_REST_API_KEY"),
-                "redirect_uri": "http://127.0.0.1:5500/base/index.html",  # 카카오에 등록된 리다이렉트 URI
+                "redirect_uri": "http://127.0.0.1:5500/user/kakaocode.html",  # 카카오에 등록된 리다이렉트 URI
                 "code": code,
             },
         )
