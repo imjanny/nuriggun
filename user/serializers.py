@@ -162,6 +162,13 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["profile_img"] = user.profile_img.url if user.profile_img else None
         return token
     
+    def for_user(self, user):
+        refresh = self.get_token(user)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+    
 #=========== 비밀번호 재설정 ============
 
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode

@@ -256,7 +256,6 @@ class MessageView(APIView):
 
 # 소셜 로그인
 
-# 카카오 로그인
 class KakaoLoginView(APIView):
     def post(self, request):
         serializer = KakaoLoginSerializer(data=request.data)
@@ -309,16 +308,9 @@ class KakaoLoginView(APIView):
                 user.save()
 
                 # 토큰 생성 및 반환
-                refresh = RefreshToken.for_user(user)
                 token_serializer = UserTokenObtainPairSerializer()
-                token = token_serializer.get_token(user)
-                return Response(
-                    {
-                        "refresh": str(refresh),
-                        "access": str(token),
-                    },
-                    status=status.HTTP_200_OK
-                )
+                tokens = token_serializer.for_user(user)
+                return Response(tokens, status=status.HTTP_200_OK)
 
             # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
             if social_user is None:
@@ -342,15 +334,8 @@ class KakaoLoginView(APIView):
             SocialToken.objects.create(app=social_app, account=new_social_account, token=access_token)
 
             # 신규 유저 생성
-            refresh = RefreshToken.for_user(new_user)
             token_serializer = UserTokenObtainPairSerializer()
-            token = token_serializer.get_token(new_user)
-            return Response(
-                {
-                    "refresh": str(refresh),
-                    "access": str(token),
-                },
-                status=status.HTTP_200_OK
-            )
+            tokens = token_serializer.for_user(new_user)
+            return Response(tokens, status=status.HTTP_200_OK)
         
         return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
