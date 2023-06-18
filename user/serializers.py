@@ -1,4 +1,6 @@
-from user.models import User
+from django.contrib.auth import get_user_model
+
+from user.models import User, Message
 from article.models import Article
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -32,11 +34,11 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["subscribe"]
-        
+
 # =============== 프로필 ================
 class ProfileArticleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Article 
+        model = Article
         fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,7 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe', 'subscribe_count')
         read_only_fields = ('email',)
 
-# =============== 이메일 비동기전송 ==============   
+# =============== 이메일 비동기전송 ==============
 class Util:
     @staticmethod
     def send_email(message):
@@ -74,7 +76,7 @@ class Util:
         reset_message = {
             "subject": subject,
             "message": message,
-            "to_email": to_email, 
+            "to_email": to_email,
         }
         Util.send_email(reset_message)
 
@@ -88,7 +90,7 @@ class EmailThread(threading.Thread):
         self.email.send()
 
 
-# =============== 회원가입(이메일인증) ==============   
+# =============== 회원가입(이메일인증) ==============
 import re
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -168,8 +170,8 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }
-    
-#=========== 비밀번호 재설정 ============
+
+# =========== 비밀번호 재설정 ============
 
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -178,24 +180,24 @@ from django.core.mail import send_mail
 from rest_framework import exceptions
 
 class PasswordResetSerializer(serializers.Serializer):
-        email = serializers.EmailField()
+    email = serializers.EmailField()
 
-        def validate(self, attrs):
-            try:
-                email = attrs.get("email")
-                user = User.objects.get(email=email)
-                uidb64 = urlsafe_base64_encode(force_bytes(user.id))
-                token = PasswordResetTokenGenerator().make_token(user)
+    def validate(self, attrs):
+        try:
+            email = attrs.get("email")
+            user = User.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
 
-                reset_url = f"http://localhost:8000/user/password/reset/check/{uidb64}/{token}/"
-        
-                Util.send_password_reset_email(user, reset_url)
-                return attrs
+            reset_url = f"http://localhost:8000/user/password/reset/check/{uidb64}/{token}/"
 
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"email": "잘못된 이메일입니다. 다시 입력해주세요."}
-                )
+            Util.send_password_reset_email(user, reset_url)
+            return attrs
+
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"email": "잘못된 이메일입니다. 다시 입력해주세요."}
+            )
 
 class PasswordConfirmSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, error_messages={
@@ -231,7 +233,7 @@ class PasswordConfirmSerializer(serializers.Serializer):
                 )
             if not re.match(password_pattern, password):
                 raise serializers.ValidationError("비밀번호는 최소 8자 이상이어야 하며, 숫자와 문자의 조합이어야 합니다.")
-        
+
             user.set_password(password)
             user.save()
 
@@ -239,20 +241,13 @@ class PasswordConfirmSerializer(serializers.Serializer):
 
         except User.DoesNotExist:
             raise serializers.ValidationError(detail={"user": "존재하지 않는 회원입니다."})
-        
-#=========== 비밀번호 재설정 끝 ============    
-  
+
+# =========== 비밀번호 재설정 끝 ============
+
 # 쪽지
+
+
 class MessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = ['id', 'sender', 'receiver', 'title', 'content', 'timestamp', 'image']
-
-class ImageSerializer(serializers.ModelSerializer):
-    """이미지 시리얼라이저"""
-
-    image = serializers.ImageField(use_url=True)
-
     class Meta:
         model = Message
         fields = "__all__"
@@ -261,42 +256,37 @@ class ImageSerializer(serializers.ModelSerializer):
 class MessageCreateSerializer(serializers.ModelSerializer):
     """쪽지 작성 시리얼라이저"""
 
-    receiver = serializers.SerializerMethodField()
-    image = ImageSerializer(many=True, read_only=True)
-
-    def get_receiver(self, obj):
-        return obj.receiver.nickname
+    receiver_email = serializers.EmailField(write_only=True)
 
     class Meta:
         model = Message
-        fields = ['receiver', 'title', 'content', 'image']
+        fields = ['receiver_email', 'title', 'content', 'image']
 
     def create(self, validated_data):
-        images_data = self.context.get("request").FILES
-        receiver = validated_data.pop('receiver')
-        message = Message.objects.create(receiver=receiver, **validated_data)
-        # message = Message.objects.create(**validated_data)
-        for image_data in images_data.getlist("image"):
-            Message.objects.create(article=message, image=image_data)
+        receiver_email = validated_data.pop('receiver_email')
+        receiver = get_user_model().objects.get(email=receiver_email)
+        validated_data['receiver'] = receiver
+        message = Message.objects.create(**validated_data)
         return message
+
 
 class MessageDetailSerializer(serializers.ModelSerializer):
     """쪽지 상세보기 시리얼라이저"""
 
-    user_id = serializers.SerializerMethodField()
-    image = ImageSerializer(source="images_set", many=True, read_only=True)
+    sender = serializers.EmailField(source="sender.email")
+    receiver = serializers.EmailField(source="receiver.email")
 
-    # def get_user(self, obj):
-    #     return obj.user.nickname
+    def get_sender(self, obj):
+        return obj.sender.email
 
-    def get_user_id(self, obj):
-        return obj.user.id
-
+    def get_receiver(self, obj):
+        return obj.receiver.email
 
     class Meta:
         model = Message
         fields = "__all__"
-        
+
+
 class KakaoLoginSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
     access_token = serializers.CharField(required=False)
