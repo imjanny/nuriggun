@@ -23,6 +23,8 @@ from django.core.exceptions import ImproperlyConfigured
 
 DATABASES = my_settings.DATABASES
 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 이미지 크기 10MB까지
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_DIR = Path(__file__).resolve().parent

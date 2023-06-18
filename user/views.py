@@ -1,7 +1,9 @@
 import os
 import requests
+from django.contrib.auth import get_user_model
 from django.shortcuts import redirect, get_object_or_404, render
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -9,7 +11,10 @@ from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework import generics
 from .models import Message
-from .serializers import MessageSerializer, MessageCreateSerializer, MessageDetailSerializer
+from .serializers import MessageSerializer, MessageCreateSerializer, \
+    MessageDetailSerializer  # , MessageCreateSerializer, MessageDetailSerializer
+from rest_framework.settings import api_settings
+
 
 from .models import User
 
@@ -47,7 +52,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 import base64
 import binascii
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, QueryDict
 
 
 # ============비밀번호 재설정=============
@@ -203,76 +208,59 @@ class SubscribeView(APIView):
 
 # 쪽지 관련 view
 
-'''받은 쪽지함'''
-class MessageInboxView(generics.ListAPIView):
-    serializer_class = MessageSerializer
+class MessageInboxView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request):
         user = self.request.user
-        return Message.objects.filter(receiver=user)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        if self.request.is_ajax():
-            return JsonResponse(serializer.data, safe=False)
-        else:
-            return render(request, 'message_inbox.html', {'messages': serializer.data})
+        messages = Message.objects.filter(receiver=user)
+        serializer = MessageDetailSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-'''보낸 쪽지함'''
-class MessageSentView(generics.ListAPIView):
-    serializer_class = MessageSerializer
+class MessageSentView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request):
         user = self.request.user
-        return Message.objects.filter(sender=user)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        if self.request.is_ajax():
-            return JsonResponse(serializer.data, safe=False)
-        else:
-            return render(request, 'message_sent.html', {'messages': serializer.data})
+        messages = Message.objects.filter(sender=user)
+        serializer = MessageDetailSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MessageView(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    authentication_classes = [JWTAuthentication]
-
-    def get(self, request, message_id):
-        """상세 쪽지 보기"""
-        message = get_object_or_404(Message, id=message_id)
-        serializer = MessageDetailSerializer(message)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """쪽지 보내기(작성하기)"""
-        serializer = MessageCreateSerializer(
-            data=request.data, context={"request": request}
-        )
+        receiver_email = request.data.get('receiver')
+        receiver = get_user_model().objects.get(email=receiver_email)
+        mutable_data = request.data.copy()
+        mutable_data['receiver_email'] = receiver_email
+        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict.update(mutable_data)
+        serializer = MessageCreateSerializer(data=mutable_data_querydict)
 
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save(sender=request.user)
             return Response(
-                {"message": "쪽지를 보냈습니다.", "messgae_id": serializer.instance.id},
-                status=status.HTTP_200_OK,
+                {"message": "쪽지를 보냈습니다.", "message_id": serializer.instance.id},
+                status=status.HTTP_200_OK
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, message_id):
-        """게시글 삭제"""
-        messgae = get_object_or_404(Message, id=message_id)
 
-        if request.user == messgae.user:
-            messgae.delete()
-            return Response(
-                {"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT
-            )
-        else:
-            return Response("쪽지를 삭제할 권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+class MessageDetailView(APIView):
+    def get(self, request, message_id):
+        message = get_object_or_404(Message, id=message_id)
+        serializer = MessageDetailSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, message_id):
+        message = get_object_or_404(Message, id=message_id)
+        message.delete()
+        return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
+
 
 # 소셜 로그인
 

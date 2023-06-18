@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.urls import reverse
 
+from django.conf import settings
 
 class UserManager(BaseUserManager):
 
@@ -57,7 +58,6 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-        
 
     def has_perm(self, perm, obj=None):
         return True
@@ -74,40 +74,16 @@ class User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
 # 쪽지 모델
 
-from django.conf import settings
-from django.db import models
 
 class Message(models.Model):
-
-    class Meta:
-        db_table = "Message"
-
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
-    title = models.CharField(max_length=255)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    title = models.CharField(max_length=100)
     content = models.TextField()
+    image = models.ImageField(upload_to='message_images/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(
-        "이미지", blank=True, null=True, upload_to="image/message/%m/%d/"
-    )
 
     def __str__(self):
         return self.title
-
-# class Images(models.Model):
-#     article = models.ForeignKey(
-#         Message, blank=False, null=False, verbose_name="쪽지", on_delete=models.CASCADE
-#     )
-#     image = models.ImageField(
-#         "이미지", blank=True, null=True, upload_to="image/message/%m/%d/"
-#     )
-#
-#     def __str__(self):
-#         return str(self.article)
