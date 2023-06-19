@@ -136,7 +136,7 @@ class ScrapView(APIView):
         article = get_object_or_404(Article, id=article_id)
         if request.user in article.scrap.all():
             article.scrap.remove(request.user)
-            return Response('스크랩취소', status=status.HTTP_200_OK)
+            return Response('스크랩취소', status=status.HTTP_202_ACCEPTED)
         else:
             article.scrap.add(request.user)
             return Response('스크랩', status=status.HTTP_200_OK)
