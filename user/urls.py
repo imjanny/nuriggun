@@ -38,7 +38,6 @@ urlpatterns = [
     path('messages/inbox/', views.MessageInboxView.as_view(), name='message_inbox'),
     path('messages/sent/', views.MessageSentView.as_view(), name='message_sent'),
     path('messages/create/', views.MessageView.as_view(), name='message_create'),
-    path('messages/<int:message_id>/', views.MessageView.as_view(), name='message_detail'),
-    path('messages/<int:message_id>/delete/', views.MessageView.as_view(), name='message_delete'),
+    path('messages/<int:message_id>/', views.MessageDetailView.as_view(), name='message_detail'),
 ]
 

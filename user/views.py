@@ -247,7 +247,6 @@ class MessageView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class MessageDetailView(APIView):
     def get(self, request, message_id):
         """ 쪽지 상세보기 """

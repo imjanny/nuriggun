@@ -20,6 +20,8 @@ from corsheaders.defaults import default_methods
 
 DATABASES = my_settings.DATABASES
 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 이미지 크기 10MB까지
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -267,7 +269,7 @@ ACCOUNT_USERNAME_REQUIRED = False # 아이디로 로그인 하지않고
 ACCOUNT_EMAIL_REQUIRED = True # 이메일로 로그인하게 만듦
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = '/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
+LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
 ACCOUNT_LOGOUT_REDIRECT_URL = '/' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -277,7 +279,7 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") # 발신할 이메일
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") # 발신할 메일의 비밀번호
 EMAIL_USE_TLS = True # TLS 보안 방법
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-URL_FRONT = 'http://127.0.0.1:5500/user/index.html' # 공개적인 웹페이지가 있다면 등록
+URL_FRONT = 'http://127.0.0.1:5500/base/index.html' # 공개적인 웹페이지가 있다면 등록
 # ACCOUNT_CONFIRM_EMAIL_ON_GET = True # 유저가 받은 링크를 클릭하면 회원가입 완료되게끔
 # ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 # ACCOUNT_EMAIL_SUBJECT_PREFIX = "[nuriggun]" # 이메일에 자동으로 표시되는 사이트 정보
@@ -289,6 +291,3 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',    
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
-LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/login.html'   # social login redirect
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # logout redirect

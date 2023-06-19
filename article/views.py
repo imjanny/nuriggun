@@ -4,7 +4,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from article.models import Article, Comment, CommentReaction
 from article.serializers import (
+    HomeSerializer,
     ArticleSerializer,
+    ArticleListSerializer,
     ArticleCreateSerializer,
     CommentSerializer,
     CommentCreateSerializer,
@@ -17,6 +19,40 @@ from .models import ArticleReaction
 from user.models import User
 from rest_framework import generics, filters
 
+# ======== 메인페이지 관련 import =========
+from rest_framework.pagination import LimitOffsetPagination
+from django.db.models import Count
+# ========= 메인페이지 view =========
+class HomePagination(LimitOffsetPagination):
+    default_limit = 4
+
+class HomeView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = HomePagination
+
+    def get(self, request):
+        ordering = request.query_params.get("order", None)
+        if ordering == "sub":
+            articles = Article.objects.order_by("-created_at")
+            print("서브정렬")
+        elif ordering == "main":
+            articles = Article.objects.annotate(
+                comments_count=Count("comment")
+            ).order_by("-comments_count")
+            print("메인정렬")
+        elif ordering is None:
+            articles = Article.objects.all()
+            print("그냥정렬")
+
+        paginator = self.pagination_class()
+        paginated_articles = paginator.paginate_queryset(articles, request)
+
+        serializer = HomeSerializer(paginated_articles, many=True)
+        response_data = {
+            'results': serializer.data,
+            'order': ordering  
+        }
+        return paginator.get_paginated_response(response_data)
 
 #------------------------------------- 게시글 생성 ------------------------------------- 
 
@@ -25,13 +61,11 @@ class ArticleView(APIView):
     
 # ------------------------------------ 게시글 목록 -------------------------------------
     
-    def get(self, request):  
-        category = request.GET.get('category')
-
-        if category:  
-            articles = Article.objects.filter(category=category) # 카테고리 있는 경우 해당 카테고리의 게시글 보여줌
-        else:  
-            articles = Article.objects.all()# 카테고리 없는 경우 모든 게시글 보여주기
+    def get(self, request, category=None):
+        if category:
+            articles = Article.objects.filter(category=category)
+        else:
+            articles = Article.objects.all()
 
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -56,7 +90,7 @@ class ArticleListView(APIView):
     
     def get(self, request, user_id):  
         articles = Article.objects.filter(user_id=user_id)
-        serializer = ArticleSerializer(articles, many=True)
+        serializer = ArticleListSerializer(articles, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -102,7 +136,7 @@ class ScrapView(APIView):
         article = get_object_or_404(Article, id=article_id)
         if request.user in article.scrap.all():
             article.scrap.remove(request.user)
-            return Response('스크랩취소', status=status.HTTP_200_OK)
+            return Response('스크랩취소', status=status.HTTP_202_ACCEPTED)
         else:
             article.scrap.add(request.user)
             return Response('스크랩', status=status.HTTP_200_OK)
@@ -158,13 +192,11 @@ class ArticleReactionView(APIView):
             if request.user in reaction_field.all():
                 # 사용자가 이미 반응을 한 상태이므로 반응을 취소
                 reaction_field.remove(request.user)
-                message = "반응을 취소했습니다."
+                return Response({"message": "반응을 취소했습니다."}, status=status.HTTP_200_OK)
             else:
                 # 사용자가 반응을 하지 않은 상태이므로 반응을 추가
                 reaction_field.add(request.user)
-                message = "반응을 눌렀습니다."
-
-            return Response({"message": message}, status=status.HTTP_200_OK)
+                return Response({"message": "반응을 눌렀습니다."}, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "유효하지 않은 반응 타입입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -244,7 +276,7 @@ class CommentLikeView(APIView):
             commentreaction.like.remove(user)
             comment.like_count -=1
             comment.save()
-            return Response("좋아요를 취소했습니다.", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소했습니다.", status=status.HTTP_202_ACCEPTED)
         
         elif user in commentreaction.hate.all():
             commentreaction.hate.remove(user)
@@ -252,7 +284,7 @@ class CommentLikeView(APIView):
             comment.like_count +=1
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소하고, 좋아요를 했습니다.", status=status.HTTP_201_CREATED)
         
         else:
             commentreaction.like.add(user)
@@ -278,7 +310,7 @@ class CommentHateView(APIView):
             commentreaction.hate.remove(user)
             comment.hate_count -=1
             comment.save()
-            return Response("싫어요를 취소했습니다.", status=status.HTTP_200_OK)
+            return Response("싫어요를 취소했습니다.", status=status.HTTP_202_ACCEPTED)
         
         elif user in commentreaction.like.all():
             commentreaction.like.remove(user)
@@ -286,7 +318,7 @@ class CommentHateView(APIView):
             comment.hate_count +=1
             comment.like_count -=1
             comment.save()
-            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_200_OK)
+            return Response("좋아요를 취소하고, 싫어요를 했습니다.", status=status.HTTP_201_CREATED)
         
         else:
             commentreaction.hate.add(user)
