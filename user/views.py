@@ -203,52 +203,63 @@ class SubscribeView(APIView):
 
 # 쪽지 관련 view
 
-'''받은 쪽지함'''
-class MessageInboxView(generics.ListAPIView):
-    serializer_class = MessageSerializer
+class MessageInboxView(APIView):
+    """ 받은 쪽지함 """
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request):
         user = self.request.user
-        return Message.objects.filter(receiver=user)
+        messages = Message.objects.filter(receiver=user)
+        serializer = MessageDetailSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-'''보낸 쪽지함'''
-class MessageSentView(generics.ListAPIView):
-    serializer_class = MessageSerializer
+class MessageSentView(APIView):
+    """ 보낸 쪽지함 """
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request):
         user = self.request.user
-        return Message.objects.filter(sender=user)
+        messages = Message.objects.filter(sender=user)
+        serializer = MessageDetailSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """ 쪽지 보내기(작성하기) """
+        receiver_email = request.data.get('receiver')
+        receiver = get_user_model().objects.get(email=receiver_email)
+        mutable_data = request.data.copy()
+        mutable_data['receiver_email'] = receiver_email
+        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict.update(mutable_data)
+        serializer = MessageCreateSerializer(data=mutable_data_querydict)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(sender=request.user)
+            return Response(
+                {"message": "쪽지를 보냈습니다.", "message_id": serializer.instance.id},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MessageDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    '''쪽지 보기'''
     def get(self, request, message_id):
+        """ 쪽지 상세보기 """
         message = get_object_or_404(Message, id=message_id)
-        serializer = MessageSerializer(message)
+        serializer = MessageDetailSerializer(message)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    '''쪽지 삭제 하기'''
     def delete(self, request, message_id):
+        """ 쪽지 삭제하기 """
         message = get_object_or_404(Message, id=message_id)
-        if request.method == 'POST':
-            message.delete()
-            return Response({"message": "삭제 완료!"}, status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
-
-
-''' 쪽지 보내기 '''
-@api_view(['POST'])
-def message_create(request):
-    serializer = MessageSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        message.delete()
+        return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
     
 
 # 소셜 로그인

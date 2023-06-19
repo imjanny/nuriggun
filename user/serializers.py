@@ -243,10 +243,46 @@ class PasswordConfirmSerializer(serializers.Serializer):
 #=========== 비밀번호 재설정 끝 ============    
   
 # 쪽지
+
+
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'receiver', 'subject', 'content', 'timestamp']
+        fields = "__all__"
+
+
+class MessageCreateSerializer(serializers.ModelSerializer):
+    """쪽지 작성 시리얼라이저"""
+
+    receiver_email = serializers.EmailField(write_only=True)
+
+    class Meta:
+        model = Message
+        fields = ['receiver_email', 'title', 'content', 'image']
+
+    def create(self, validated_data):
+        receiver_email = validated_data.pop('receiver_email')
+        receiver = get_user_model().objects.get(email=receiver_email)
+        validated_data['receiver'] = receiver
+        message = Message.objects.create(**validated_data)
+        return message
+
+
+class MessageDetailSerializer(serializers.ModelSerializer):
+    """쪽지 상세보기 시리얼라이저"""
+
+    sender = serializers.EmailField(source="sender.email")
+    receiver = serializers.EmailField(source="receiver.email")
+
+    def get_sender(self, obj):
+        return obj.sender.email
+
+    def get_receiver(self, obj):
+        return obj.receiver.email
+
+    class Meta:
+        model = Message
+        fields = "__all__"
         
         
 class KakaoLoginSerializer(serializers.Serializer):
