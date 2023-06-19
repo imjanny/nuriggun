@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+
 from user.models import User
 from article.models import Article
 from rest_framework import serializers

@@ -1,7 +1,8 @@
 import os
 import requests
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -9,8 +10,7 @@ from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework import generics
 from .models import Message
-from .serializers import MessageSerializer
-
+from .serializers import MessageDetailSerializer, MessageCreateSerializer
 
 from .models import User
 
@@ -48,7 +48,8 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 import base64
 import binascii
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, QueryDict
+
 
 # ============비밀번호 재설정=============
 
@@ -231,7 +232,6 @@ class MessageView(APIView):
     def post(self, request):
         """ 쪽지 보내기(작성하기) """
         receiver_email = request.data.get('receiver')
-        receiver = get_user_model().objects.get(email=receiver_email)
         mutable_data = request.data.copy()
         mutable_data['receiver_email'] = receiver_email
         mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
@@ -246,7 +246,6 @@ class MessageView(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class MessageDetailView(APIView):
     def get(self, request, message_id):
