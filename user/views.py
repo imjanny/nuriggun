@@ -23,7 +23,8 @@ from user.serializers import (
     UserTokenObtainPairSerializer,
     PasswordResetSerializer,
     PasswordConfirmSerializer,
-    KakaoLoginSerializer
+    KakaoLoginSerializer,
+    HomeUserListSerializer,
 )
 
 # 이메일 인증 import
@@ -346,3 +347,12 @@ class KakaoLoginView(APIView):
             return Response(tokens, status=status.HTTP_200_OK)
         
         return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+# HOME
+class HomeUserListView(APIView):
+    '''메인페이지 유저리스트 뷰'''
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    def get(self, request):
+        users = User.objects.all()
+        serializer = HomeUserListSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
