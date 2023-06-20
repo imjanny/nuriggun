@@ -4,7 +4,7 @@ from article.models import Article, Comment
 
 
 class HomeSerializer(serializers.ModelSerializer):
-    '''메인페이지 용 시리얼라이저'''
+    '''메인페이지 용 게시글 시리얼라이저'''
     count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     
@@ -79,7 +79,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "CATEGORIES","image","created_at", "updated_at")
+                  "category", "image","created_at", "updated_at")
 
    
 

@@ -26,9 +26,18 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Count
 # ========= 메인페이지 view =========
 class HomePagination(LimitOffsetPagination):
-    default_limit = 4
+    default_limit = 10
+
+    def get_limit(self, request):
+        ordering = request.query_params.get("order", None)
+        if ordering == "main":
+            return 4  
+        else:
+            return self.default_limit  
+    
 
 class HomeView(APIView):
+    '''홈-게시글'''
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = HomePagination
 
@@ -36,15 +45,14 @@ class HomeView(APIView):
         ordering = request.query_params.get("order", None)
         if ordering == "sub":
             articles = Article.objects.order_by("-created_at")
-            print("서브정렬")
+            print("서브")
         elif ordering == "main":
             articles = Article.objects.annotate(
                 comments_count=Count("comment")
             ).order_by("-comments_count")
-            print("메인정렬")
+            print("메인")
         elif ordering is None:
             articles = Article.objects.all()
-            print("그냥정렬")
 
         paginator = self.pagination_class()
         paginated_articles = paginator.paginate_queryset(articles, request)
@@ -55,7 +63,7 @@ class HomeView(APIView):
             'order': ordering  
         }
         return paginator.get_paginated_response(response_data)
-
+     
 #------------------------------------- 게시글 생성 ------------------------------------- 
 
 class ArticleView(APIView): 
