@@ -1,13 +1,12 @@
-from django.urls import path, include
+from django.urls import path
 from user import views
 
-# 비밀번호 재설정
-from dj_rest_auth.views import PasswordResetView, PasswordResetConfirmView
 
 urlpatterns = [
     path('', views.UserView.as_view(), name="user_view"),
-    # path('dj-rest-auth/', include('dj_rest_auth.urls')),
-    # path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
+    
+    # HOME
+    path("home/userlist/", views.HomeUserListView.as_view(), name="home_user_list_view"),
 
     # 회원가입(이메일인증)
     path('signup/', views.SignUpView.as_view(), name='sign_up_view'),
@@ -15,7 +14,6 @@ urlpatterns = [
 
     # 로그인
     path("login/", views.LoginView.as_view(), name="login_view"),
-    
 
     # 비밀번호 재설정 URL
     path('password/reset/', views.PasswordResetView.as_view(), name='rest_password_reset_view'),
@@ -31,6 +29,7 @@ urlpatterns = [
 
     # 프로필
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
+
     #소셜로그인 api
     path('kakao/login/', views.KakaoLoginView.as_view(), name='kakao_login'),
 
