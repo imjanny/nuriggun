@@ -35,7 +35,7 @@ class User(AbstractBaseUser):
         ('생활/문화', 'culture'),
         ('스포츠', 'sport'),
         ('날씨', 'weather'),
-        ('세계', 'wrold')
+        ('world', 'world')
     ]
 
     email = models.EmailField("email address", max_length=25, unique=True, null=False, blank=False)
@@ -75,25 +75,16 @@ class User(AbstractBaseUser):
         return self.is_admin
 
 
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
 # 쪽지 모델
 
-from django.conf import settings
-from django.db import models
 
 class Message(models.Model):
-
-    class Meta:
-        db_table = "Message"
-
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
-    subject = models.CharField(max_length=255)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    title = models.CharField(max_length=100)
     content = models.TextField()
+    image = models.ImageField(upload_to='message_images/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.subject
+        return self.title

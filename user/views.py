@@ -1,7 +1,8 @@
 import os
 import requests
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -9,8 +10,7 @@ from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework import generics
 from .models import Message
-from .serializers import MessageSerializer
-
+from .serializers import MessageDetailSerializer, MessageCreateSerializer
 
 from .models import User
 
@@ -48,7 +48,8 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 import base64
 import binascii
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, QueryDict
+
 
 # ============비밀번호 재설정=============
 
@@ -203,57 +204,65 @@ class SubscribeView(APIView):
 
 # 쪽지 관련 view
 
-'''받은 쪽지함'''
-class MessageInboxView(generics.ListAPIView):
-    serializer_class = MessageSerializer
+class MessageInboxView(APIView):
+    """ 받은 쪽지함 """
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get(self, request):
         user = self.request.user
-        return Message.objects.filter(receiver=user)
-
-
-'''보낸 쪽지함'''
-class MessageSentView(generics.ListAPIView):
-    serializer_class = MessageSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        return Message.objects.filter(sender=user)
-
-
-class MessageDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    '''쪽지 보기'''
-    def get(self, request, message_id):
-        message = get_object_or_404(Message, id=message_id)
-        serializer = MessageSerializer(message)
+        messages = Message.objects.filter(receiver=user)
+        serializer = MessageDetailSerializer(messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    '''쪽지 삭제 하기'''
-    def delete(self, request, message_id):
-        message = get_object_or_404(Message, id=message_id)
-        if request.method == 'POST':
-            message.delete()
-            return Response({"message": "삭제 완료!"}, status=status.HTTP_204_NO_CONTENT)
+
+class MessageSentView(APIView):
+    """ 보낸 쪽지함 """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = self.request.user
+        messages = Message.objects.filter(sender=user)
+        serializer = MessageDetailSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """ 쪽지 보내기(작성하기) """
+        receiver_email = request.data.get('receiver')
+        mutable_data = request.data.copy()
+        mutable_data['receiver_email'] = receiver_email
+        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict.update(mutable_data)
+        serializer = MessageCreateSerializer(data=mutable_data_querydict)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(sender=request.user)
+            return Response(
+                {"message": "쪽지를 보냈습니다.", "message_id": serializer.instance.id},
+                status=status.HTTP_200_OK
+            )
         else:
-            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class MessageDetailView(APIView):
+    def get(self, request, message_id):
+        """ 쪽지 상세보기 """
+        message = get_object_or_404(Message, id=message_id)
+        serializer = MessageDetailSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-''' 쪽지 보내기 '''
-@api_view(['POST'])
-def message_create(request):
-    serializer = MessageSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, message_id):
+        """ 쪽지 삭제하기 """
+        message = get_object_or_404(Message, id=message_id)
+        message.delete()
+        return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
     
 
 # 소셜 로그인
 
-# 카카오 로그인
 class KakaoLoginView(APIView):
     def post(self, request):
         serializer = KakaoLoginSerializer(data=request.data)
@@ -267,7 +276,7 @@ class KakaoLoginView(APIView):
             data={
                 "grant_type": "authorization_code",
                 "client_id": os.environ.get("KAKAO_REST_API_KEY"),
-                "redirect_uri": "http://127.0.0.1:5500/base/index.html",  # 카카오에 등록된 리다이렉트 URI
+                "redirect_uri": "http://127.0.0.1:5500/user/kakaocode.html",  # 카카오에 등록된 리다이렉트 URI
                 "code": code,
             },
         )
@@ -306,16 +315,9 @@ class KakaoLoginView(APIView):
                 user.save()
 
                 # 토큰 생성 및 반환
-                refresh = RefreshToken.for_user(user)
                 token_serializer = UserTokenObtainPairSerializer()
-                token = token_serializer.get_token(user)
-                return Response(
-                    {
-                        "refresh": str(refresh),
-                        "access": str(token),
-                    },
-                    status=status.HTTP_200_OK
-                )
+                tokens = token_serializer.for_user(user)
+                return Response(tokens, status=status.HTTP_200_OK)
 
             # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
             if social_user is None:
@@ -339,15 +341,8 @@ class KakaoLoginView(APIView):
             SocialToken.objects.create(app=social_app, account=new_social_account, token=access_token)
 
             # 신규 유저 생성
-            refresh = RefreshToken.for_user(new_user)
             token_serializer = UserTokenObtainPairSerializer()
-            token = token_serializer.get_token(new_user)
-            return Response(
-                {
-                    "refresh": str(refresh),
-                    "access": str(token),
-                },
-                status=status.HTTP_200_OK
-            )
+            tokens = token_serializer.for_user(new_user)
+            return Response(tokens, status=status.HTTP_200_OK)
         
         return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)

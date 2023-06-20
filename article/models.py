@@ -31,7 +31,7 @@ class Article(models.Model):
 
         ('it', 'it'),
         ('경제', 'economy'),
-        ('생활/문화', 'culture'),
+        ('문화', 'culture'),
         ('스포츠', 'sport'),
         ('날씨', 'weather'),
         ('세계', 'world'),
@@ -86,7 +86,7 @@ class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comment")
     comment = models.TextField("댓글")
     comment_created_at = models.DateTimeField(auto_now_add=True)
-    comment_updated_at = models.DateTimeField(auto_now_add=True)
+    comment_updated_at = models.DateTimeField(auto_now=True)
     like_count = models.PositiveIntegerField(default=0)
     hate_count = models.PositiveIntegerField(default=0)
 
