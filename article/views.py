@@ -19,6 +19,8 @@ from .models import ArticleReaction
 from user.models import User
 from rest_framework import generics, filters
 
+
+
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Count
@@ -214,6 +216,8 @@ class ArticleSearchView(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
 
+    
+    
 
 # ----- 댓글 시작 -----
 
