@@ -26,7 +26,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Count
 # ========= 메인페이지 view =========
 class HomePagination(LimitOffsetPagination):
-    default_limit = 10
+    default_limit = 4
 
     def get_limit(self, request):
         ordering = request.query_params.get("order", None)
