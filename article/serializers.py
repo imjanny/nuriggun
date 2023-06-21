@@ -2,7 +2,6 @@ from rest_framework import serializers
 from article.models import Article, Comment
 
 
-
 class HomeSerializer(serializers.ModelSerializer):
     '''메인페이지 용 게시글 시리얼라이저'''
     count = serializers.SerializerMethodField()
@@ -96,18 +95,28 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
                   "content", "image", "CATEGORIES")
    
 
-
-
 class ArticleListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    reaction = serializers.SerializerMethodField()
 
     def get_user(self, obj):
-        return {"nickname": obj.user.nickname, "id": obj.user.id,}
+        return {"nickname": obj.user.nickname, "id": obj.user.id, }
+
+    def get_reaction(self, obj):
+        reaction_data = {
+            'great': obj.great.count(),
+            'sad': obj.sad.count(),
+            'angry': obj.angry.count(),
+            'good': obj.good.count(),
+            'subsequent': obj.subsequent.count()
+        }
+        return reaction_data
 
     class Meta:
         model = Article
-        fields = ["id", "title", "user", "image", "created_at"]
-         
+        fields = ["id", "title", "user", "image",
+                  "created_at", "category", "reaction"]
 
 
 #---------------------------- 댓글 ----------------------------
