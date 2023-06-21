@@ -4,11 +4,37 @@ from article.models import Article, Comment
 
 class HomeSerializer(serializers.ModelSerializer):
     '''메인페이지 용 게시글 시리얼라이저'''
-    count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
+    great_count = serializers.SerializerMethodField()
+    sad_count = serializers.SerializerMethodField()
+    angry_count = serializers.SerializerMethodField()
+    good_count = serializers.SerializerMethodField()
+    subsequent_count = serializers.SerializerMethodField()
+    reaction_count = serializers.SerializerMethodField()
+
+    def get_great_count(self, obj):
+        return obj.great.count()
     
-    def get_count(self, obj):
-        return Article.objects.count()
+    def get_sad_count(self, obj):
+        return obj.sad.count()
+    
+    def get_angry_count(self, obj):
+        return obj.angry.count()
+    
+    def get_good_count(self, obj):
+        return obj.good.count()
+    
+    def get_subsequent_count(self, obj):
+        return obj.subsequent.count()
+    
+    def get_reaction_count(self, obj):
+        return sum([
+            obj.great.count(),
+            obj.sad.count(),
+            obj.angry.count(),
+            obj.good.count(),
+            obj.subsequent.count()
+        ])
     
     def get_comments_count(self, obj):
         return obj.comment.count()
