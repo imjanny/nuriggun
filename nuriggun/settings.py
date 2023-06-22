@@ -35,9 +35,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # 환경변수에 따라 DEBUG모드 여부를 결정합니다.
-DEBUG = os.environ.get('DEBUG', '0') == '1'
+DEBUG = True
 
-ALLOWED_HOSTS = ['backend', ]
+# ALLOWED_HOSTS = ['backend', ]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -106,18 +107,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nuriggun.wsgi.application'
 
-
-MYSQL_DB = os.environ.get('MYSQL_DB', '')
-if MYSQL_DB:
-    DATABASES = my_settings.DATABASES
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+DATABASES = my_settings.DATABASES
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -172,31 +162,17 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
+    'https://teamnuri.xyz',
 ]
 
-CSRF_TRUSTED_ORIGINS  =  [
-    'http://127.0.0.1:8000',
-    'http://localhost:8000',
-    'http://127.0.0.1:5500',
-    'http://localhost:5500',
-    'https://www.nuriggun.xyz',
-    'http://13.125.10.186',
-]
+CSRF_TRUSTED_ORIGINS=CORS_ALLOWED_ORIGINS
+
 
 CORS_ALLOW_METHODS = list(default_methods) + [
     "",
 ]
 
 
-CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000',
-                         'http://localhost:5000',
-                         'http://localhost:5500',
-                         'http://127.0.0.1:5500',
-                         'http://localhost:8000',
-                         'http://127.0.0.1:8000',
-                         'https://www.nuriggun.xyz',
-                         'http://13.125.10.186',
-                        ]
 
 
 SIMPLE_JWT = {
@@ -274,7 +250,7 @@ ACCOUNT_USERNAME_REQUIRED = False # 아이디로 로그인 하지않고
 ACCOUNT_EMAIL_REQUIRED = True # 이메일로 로그인하게 만듦
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
+LOGIN_REDIRECT_URL = 'https://teamnuri.xyz/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
 ACCOUNT_LOGOUT_REDIRECT_URL = '/' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -284,11 +260,7 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") # 발신할 이메일
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") # 발신할 메일의 비밀번호
 EMAIL_USE_TLS = True # TLS 보안 방법
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-URL_FRONT = 'http://127.0.0.1:5500/base/index.html' # 공개적인 웹페이지가 있다면 등록
-# ACCOUNT_CONFIRM_EMAIL_ON_GET = True # 유저가 받은 링크를 클릭하면 회원가입 완료되게끔
-# ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
-# ACCOUNT_EMAIL_SUBJECT_PREFIX = "[nuriggun]" # 이메일에 자동으로 표시되는 사이트 정보
-# PASSWORD_RESET_TIMEOUT = 86400 # 비밀번호 재설정 만료 기간 (1일)
+# URL_FRONT = 'http://127.0.0.1:5500/index.html' # 공개적인 웹페이지가 있다면 등록
 
 
 #소셜 로그인 관련
