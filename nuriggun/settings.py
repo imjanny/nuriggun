@@ -6,7 +6,7 @@ import my_settings
 from corsheaders.defaults import default_methods
 
 
-DATABASES = my_settings.DATABASES
+
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 이미지 크기 10MB까지
 
@@ -85,13 +85,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nuriggun.wsgi.application'
 
+DATABASES = my_settings.DATABASES
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -185,31 +180,14 @@ SIMPLE_JWT = {
 }
 
 AUTHENTICATION_BACKENDS = [ # 소셜로그인 
-    # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
-    # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # 사이트 1개만 사용
 SITE_ID = 1
 
-REST_USE_JWT = True
-
-# dj-rest-auth 3.0 버전 이후로는 이렇게 써야함
-# JWT_AUTH_HTTPONLY : 쿠키를 http only 여부
-# JWT_AUTH_REFRESH_COOKIE : refresh token을 담을 쿠키 이름
-# JWT_AUTH_COOKIE_USE_CSRF : JWT 쿠키 csrf 검사
-# SESSION_LOGIN : 세션 로그인
-REST_AUTH = {
-    'USE_JWT' : True,
-    'JWT_AUTH_HTTPONLY': False,
-    'JWT_AUTH_REFRESH_COOKIE' : "refresh_token",
-    "JWT_AUTH_COOKIE": "access",
-    'JWT_AUTH_COOKIE_USE_CSRF' : True,
-    'SESSION_LOGIN' : False
-}
-
+# REST_USE_JWT = True
 
 AUTH_USER_MODEL = 'user.User'
 # 소셜로그인부분 ! 
@@ -219,7 +197,7 @@ ACCOUNT_USERNAME_REQUIRED = False # 아이디로 로그인 하지않고
 ACCOUNT_EMAIL_REQUIRED = True # 이메일로 로그인하게 만듦
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = 'http://127.0.0.1:5500/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
+LOGIN_REDIRECT_URL = 'https://teamnuri.xyz/user/kakaocode.html/' # 로그인되면 리다이렉트 될 페이지 프론트로 해야겠죠 ? 만들면 주석풀기 ~
 ACCOUNT_LOGOUT_REDIRECT_URL = '/' #이건 로그아웃 로그아웃 요청은 /accounts/logout 여기임! 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -229,7 +207,6 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER") # 발신할 이메일
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD") # 발신할 메일의 비밀번호
 EMAIL_USE_TLS = True # TLS 보안 방법
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-URL_FRONT = 'http://127.0.0.1:5500/base/index.html' # 공개적인 웹페이지가 있다면 등록
 
 
 #소셜 로그인 관련
