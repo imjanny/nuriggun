@@ -51,7 +51,8 @@ import base64
 import binascii
 from django.http import HttpResponseRedirect, QueryDict
 
-
+# HOME import
+from rest_framework.pagination import LimitOffsetPagination
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
@@ -349,10 +350,20 @@ class KakaoLoginView(APIView):
         return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 # HOME
+class HomeUserPagination(LimitOffsetPagination):
+    default_limit = 12
+
 class HomeUserListView(APIView):
     '''메인페이지 유저리스트 뷰'''
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = HomeUserPagination
+
     def get(self, request):
         users = User.objects.all()
-        serializer = HomeUserListSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        paginator = self.pagination_class()
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        serializer = HomeUserListSerializer(paginated_users, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)       
