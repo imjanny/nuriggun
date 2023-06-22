@@ -249,7 +249,6 @@ class MessageView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class MessageDetailView(APIView):
     def get(self, request, message_id):
         """ 쪽지 상세보기 """
@@ -394,3 +393,4 @@ class HomeUserListView(APIView):
         serializer = HomeUserListSerializer(paginated_users, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+

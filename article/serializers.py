@@ -2,6 +2,46 @@ from rest_framework import serializers
 from article.models import Article, Comment
 
 
+class HomeSerializer(serializers.ModelSerializer):
+    '''메인페이지 용 게시글 시리얼라이저'''
+    comments_count = serializers.SerializerMethodField()
+    great_count = serializers.SerializerMethodField()
+    sad_count = serializers.SerializerMethodField()
+    angry_count = serializers.SerializerMethodField()
+    good_count = serializers.SerializerMethodField()
+    subsequent_count = serializers.SerializerMethodField()
+    reaction_count = serializers.SerializerMethodField()
+
+    def get_great_count(self, obj):
+        return obj.great.count()
+    
+    def get_sad_count(self, obj):
+        return obj.sad.count()
+    
+    def get_angry_count(self, obj):
+        return obj.angry.count()
+    
+    def get_good_count(self, obj):
+        return obj.good.count()
+    
+    def get_subsequent_count(self, obj):
+        return obj.subsequent.count()
+    
+    def get_reaction_count(self, obj):
+        return sum([
+            obj.great.count(),
+            obj.sad.count(),
+            obj.angry.count(),
+            obj.good.count(),
+            obj.subsequent.count()
+        ])
+    
+    def get_comments_count(self, obj):
+        return obj.comment.count()
+    
+    class Meta:
+        model = Article
+        fields = "__all__"
 #---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -9,39 +49,50 @@ class ArticleSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     reaction = serializers.SerializerMethodField()
-
-
+    comments_count = serializers.SerializerMethodField()
 
     def get_user(self, obj):
-        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk, 'emial': obj.user.email}
 
     def get_reaction(self, obj):
         reaction_data = {
-            'great': 0,
-            'sad': 0,
-            'angry': 0,
-            'good': 0,
-            'subsequent': 0
+            'great': obj.great.count(),
+            'sad': obj.sad.count(),
+            'angry': obj.angry.count(),
+            'good': obj.good.count(),
+            'subsequent': obj.subsequent.count()
         }
-        reaction = obj.articlereaction_set.all()
-        for reaction in reaction:
-            if reaction.great:
-                reaction_data['great'] += 1
-            elif reaction.sad:
-                reaction_data['sad'] += 1
-            elif reaction.angry:
-                reaction_data['angry'] += 1
-            elif reaction.good:
-                reaction_data['good'] += 1
-            elif reaction.subsequent:
-                reaction_data['subsequent'] += 1
         return reaction_data
+
+    def get_comments_count(self, obj):
+        return obj.comment.count()
+
+    # def get_reaction(self, obj):
+    #     reaction_data = {
+    #         'great': 0,
+    #         'sad': 0,
+    #         'angry': 0,
+    #         'good': 0,
+    #         'subsequent': 0
+    #     }
+    #     reactions = obj.articlereaction_set.all()
+    #     for reaction in reactions:
+    #         if reaction.great:
+    #             reaction_data['great'] += 1
+    #         elif reaction.sad:
+    #             reaction_data['sad'] += 1
+    #         elif reaction.angry:
+    #             reaction_data['angry'] += 1
+    #         elif reaction.good:
+    #             reaction_data['good'] += 1
+    #         elif reaction.subsequent:
+    #             reaction_data['subsequent'] += 1
+    #     return reaction_data
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction']
-
-
+        fields = ['id', 'title', 'content', 'user', 'created_at',
+                  'updated_at', 'reaction', 'category', 'image', 'comments_count']
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
@@ -53,7 +104,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "CATEGORIES","image","created_at", "updated_at")
+                  "category", "image","created_at", "updated_at")
 
    
 
@@ -70,19 +121,28 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
                   "content", "image", "CATEGORIES")
    
 
-
-
 class ArticleListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    changed_image = serializers.ImageField()
+    created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    reaction = serializers.SerializerMethodField()
 
     def get_user(self, obj):
-        return {"nickname": obj.user.nickname, "id": obj.user.id,}
+        return {"nickname": obj.user.nickname, "id": obj.user.id, }
+
+    def get_reaction(self, obj):
+        reaction_data = {
+            'great': obj.great.count(),
+            'sad': obj.sad.count(),
+            'angry': obj.angry.count(),
+            'good': obj.good.count(),
+            'subsequent': obj.subsequent.count()
+        }
+        return reaction_data
 
     class Meta:
         model = Article
-        fields = ["id", "title", "user", "image",]
-         
+        fields = ["id", "title", "user", "image",
+                  "created_at", "category", "reaction"]
 
 
 #---------------------------- 댓글 ----------------------------

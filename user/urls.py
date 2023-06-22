@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 from user import views
 
 
@@ -14,7 +14,6 @@ urlpatterns = [
 
     # 로그인
     path("login/", views.LoginView.as_view(), name="login_view"),
-    
 
     # 비밀번호 재설정 URL
     path('password/reset/', views.PasswordResetView.as_view(), name='rest_password_reset_view'),
@@ -30,6 +29,7 @@ urlpatterns = [
 
     # 프로필
     path('profile/<int:user_id>/', views.UserView.as_view(), name='profile_view'),
+
     #소셜로그인 api
     path('kakao/login/', views.KakaoLoginView.as_view(), name='kakao_login'),
 
@@ -39,5 +39,6 @@ urlpatterns = [
     path('messages/create/', views.MessageView.as_view(), name='message_create'),
     path('messages/<int:message_id>/', views.MessageDetailView.as_view(), name='message_detail'),
     path('messages/<int:message_id>/reply/', views.MessageReplyView.as_view(), name='message_reply'),
+
 ]
 

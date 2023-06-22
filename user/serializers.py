@@ -290,3 +290,10 @@ class MessageDetailSerializer(serializers.ModelSerializer):
 class KakaoLoginSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
     access_token = serializers.CharField(required=False)
+
+# ============ HOME ==============
+class HomeUserListSerializer(serializers.ModelSerializer):
+    '''메인페이지 용 유저리스트 시리얼라이저'''
+    class Meta:
+        model = User
+        fields = ['pk', 'email', 'nickname', 'subscribe', 'profile_img']
