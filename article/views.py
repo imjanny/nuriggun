@@ -19,14 +19,28 @@ from .models import ArticleReaction
 from user.models import User
 from rest_framework import generics, filters
 
+
+
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Count
+from datetime import date, timedelta
+from django.utils import timezone
 # ========= 메인페이지 view =========
 class HomePagination(LimitOffsetPagination):
     default_limit = 4
 
+    def get_limit(self, request):
+        ordering = request.query_params.get("order", None)
+        if ordering == "main":
+            return 4  
+        elif ordering == "best":
+            return 1
+        else:
+            return self.default_limit  
+    
 class HomeView(APIView):
+    '''홈-게시글'''
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = HomePagination
 
@@ -34,26 +48,31 @@ class HomeView(APIView):
         ordering = request.query_params.get("order", None)
         if ordering == "sub":
             articles = Article.objects.order_by("-created_at")
-            print("서브정렬")
         elif ordering == "main":
             articles = Article.objects.annotate(
                 comments_count=Count("comment")
             ).order_by("-comments_count")
-            print("메인정렬")
+        elif ordering == "best":
+            today = timezone.now()
+            start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            articles = Article.objects.filter(created_at__gte=start).annotate(
+                reaction_count=Count("great") + Count("sad") + Count("good") + Count("angry") + Count("subsequent")
+            ).order_by("-reaction_count")
+            if articles.exists():
+                print("베스트 게시글이 존재합니다.")
+            else:
+                print("오늘 생성된 베스트 게시글이 없습니다.")
+
         elif ordering is None:
             articles = Article.objects.all()
-            print("그냥정렬")
 
         paginator = self.pagination_class()
         paginated_articles = paginator.paginate_queryset(articles, request)
 
         serializer = HomeSerializer(paginated_articles, many=True)
-        response_data = {
-            'results': serializer.data,
-            'order': ordering  
-        }
-        return paginator.get_paginated_response(response_data)
-
+        
+        return paginator.get_paginated_response(serializer.data)
+     
 #------------------------------------- 게시글 생성 ------------------------------------- 
 
 class ArticleView(APIView): 
@@ -210,6 +229,8 @@ class ArticleSearchView(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
 
+    
+    
 
 # ----- 댓글 시작 -----
 
