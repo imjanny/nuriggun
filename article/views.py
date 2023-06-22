@@ -12,14 +12,9 @@ from article.serializers import (
     CommentCreateSerializer,
     ArticleSearchSerializer
     )
-import datetime
+
 from rest_framework import permissions
-from .models import ArticleReaction
-
-from user.models import User
 from rest_framework import generics, filters
-
-
 
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
@@ -53,8 +48,8 @@ class HomeView(APIView):
                 comments_count=Count("comment")
             ).order_by("-comments_count")
         elif ordering == "best":
-            today = timezone.now()
-            start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            today = timezone.localtime(timezone.now())
+            start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timezone.timedelta(hours=9)
             articles = Article.objects.filter(created_at__gte=start).annotate(
                 reaction_count=Count("great") + Count("sad") + Count("good") + Count("angry") + Count("subsequent")
             ).order_by("-reaction_count")
@@ -62,6 +57,7 @@ class HomeView(APIView):
                 print("베스트 게시글이 존재합니다.")
             else:
                 print("오늘 생성된 베스트 게시글이 없습니다.")
+                return Response([], status=status.HTTP_200_OK)
 
         elif ordering is None:
             articles = Article.objects.all()

@@ -130,7 +130,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("닉네임은 8자 이하여야 합니다.")
         
         # 부적절한 닉네임 필터링
-        blocked_words = ['shit', '욕설2', '욕설3']  # 부적절한 단어 목록
+        blocked_words = ['욕설1', '욕설2', '욕설3']  # 부적절한 단어 목록
         
         for word in blocked_words:
             if re.search(r'\b{}\b'.format(re.escape(word)), value, re.IGNORECASE):
@@ -243,7 +243,43 @@ class PasswordConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"user": "존재하지 않는 회원입니다."})
         
 #=========== 비밀번호 재설정 끝 ============    
-  
+
+# 비밀번호 찾기
+class PasswordChangeSerializer(serializers.ModelSerializer):
+    '''프로필페이지->비밀번호 찾기 시리얼라이저'''
+    password = serializers.CharField(write_only=True, error_messages={
+        'required': '비밀번호를 입력해주세요.',
+        'blank': '비밀번호를 입력해주세요.',
+    })
+    password2 = serializers.CharField(write_only=True, error_messages={
+        'required': '비밀번호 확인을 입력해주세요.',
+        'blank': '비밀번호 확인을 입력해주세요.',
+    })
+    class Meta:
+        model = User
+        fields = ("password", "password2")
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        password2 = attrs.get("password2")
+        password_pattern = r'^(?=.*\d)(?=.*[a-zA-Z]).{8,}$'
+
+        user_id = self.context['user_id']
+
+        user = User.objects.get(id=user_id)
+
+        if password != password2:
+            raise serializers.ValidationError(
+                detail={"password2": "비밀번호가 일치하지 않습니다."}
+            )
+        if not re.match(password_pattern, password):
+            raise serializers.ValidationError("비밀번호는 최소 8자 이상이어야 하며, 숫자와 문자의 조합이어야 합니다.")
+    
+        user.set_password(password)
+        user.save()
+
+        return attrs
+
 # 쪽지
 
 
