@@ -4,7 +4,7 @@ from user import views
 
 urlpatterns = [
     path('', views.UserView.as_view(), name="user_view"),
-    
+
     # HOME
     path("home/userlist/", views.HomeUserListView.as_view(), name="home_user_list_view"),
 
@@ -38,5 +38,7 @@ urlpatterns = [
     path('messages/sent/', views.MessageSentView.as_view(), name='message_sent'),
     path('messages/create/', views.MessageView.as_view(), name='message_create'),
     path('messages/<int:message_id>/', views.MessageDetailView.as_view(), name='message_detail'),
+    path('messages/<int:message_id>/reply/', views.MessageReplyView.as_view(), name='message_reply'),
+
 ]
 

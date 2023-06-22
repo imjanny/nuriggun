@@ -263,6 +263,32 @@ class MessageDetailView(APIView):
         return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
     
 
+class MessageReplyView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, message_id):
+        """ 쪽지 답장하기(작성하기) """
+
+        receiver = request.data.get('receiver')
+        mutable_data = request.data.copy()
+        mutable_data['receiver_email'] = receiver
+        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict.update(mutable_data)
+        serializer = MessageCreateSerializer(data=mutable_data_querydict)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(sender=request.user)
+            reply_message = serializer.instance
+            reply_message.reply_to = message_id
+            reply_message.save()
+            return Response(
+                {"message": "쪽지를 보냈습니다.", "message_id": reply_message.id},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 # 소셜 로그인
 
 class KakaoLoginView(APIView):
@@ -366,4 +392,5 @@ class HomeUserListView(APIView):
 
         serializer = HomeUserListSerializer(paginated_users, many=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)       
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
