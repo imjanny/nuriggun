@@ -79,7 +79,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "CATEGORIES","image","created_at", "updated_at")
+                  "category","image","created_at", "updated_at")
 
    
 

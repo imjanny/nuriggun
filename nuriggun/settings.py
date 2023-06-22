@@ -18,7 +18,6 @@ import my_settings
 from corsheaders.defaults import default_methods
 
 
-DATABASES = my_settings.DATABASES
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 이미지 크기 10MB까지
 
@@ -35,9 +34,10 @@ load_dotenv(os.path.join(PROJECT_DIR, '.env'))
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 환경변수에 따라 DEBUG모드 여부를 결정합니다.
+DEBUG = os.environ.get('DEBUG', '0') == '1'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['backend', ]
 
 
 # Application definition
@@ -107,15 +107,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'nuriggun.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+MYSQL_DB = os.environ.get('MYSQL_DB', '')
+if MYSQL_DB:
+    DATABASES = my_settings.DATABASES
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -173,11 +174,13 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5500',
 ]
 
-CSRF_TRUSTED_ORIGINS  =  [ 
+CSRF_TRUSTED_ORIGINS  =  [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
+    'https://www.nuriggun.xyz',
+    'http://13.125.10.186',
 ]
 
 CORS_ALLOW_METHODS = list(default_methods) + [
@@ -191,6 +194,8 @@ CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000',
                          'http://127.0.0.1:5500',
                          'http://localhost:8000',
                          'http://127.0.0.1:8000',
+                         'https://www.nuriggun.xyz',
+                         'http://13.125.10.186',
                         ]
 
 
