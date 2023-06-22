@@ -1,13 +1,12 @@
 from django.urls import path, include
 from user import views
 
-# 비밀번호 재설정
-from dj_rest_auth.views import PasswordResetView, PasswordResetConfirmView
 
 urlpatterns = [
     path('', views.UserView.as_view(), name="user_view"),
-    # path('dj-rest-auth/', include('dj_rest_auth.urls')),
-    # path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
+
+    # HOME
+    path("home/userlist/", views.HomeUserListView.as_view(), name="home_user_list_view"),
 
     # 회원가입(이메일인증)
     path('signup/', views.SignUpView.as_view(), name='sign_up_view'),
@@ -38,7 +37,7 @@ urlpatterns = [
     path('messages/inbox/', views.MessageInboxView.as_view(), name='message_inbox'),
     path('messages/sent/', views.MessageSentView.as_view(), name='message_sent'),
     path('messages/create/', views.MessageView.as_view(), name='message_create'),
-    path('messages/<int:message_id>/', views.MessageView.as_view(), name='message_detail'),
-    path('messages/<int:message_id>/delete/', views.MessageView.as_view(), name='message_delete'),
+    path('messages/<int:message_id>/', views.MessageDetailView.as_view(), name='message_detail'),
+    path('messages/<int:message_id>/reply/', views.MessageReplyView.as_view(), name='message_reply'),
 ]
 

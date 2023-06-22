@@ -23,7 +23,8 @@ from user.serializers import (
     UserTokenObtainPairSerializer,
     PasswordResetSerializer,
     PasswordConfirmSerializer,
-    KakaoLoginSerializer
+    KakaoLoginSerializer,
+    HomeUserListSerializer,
 )
 
 # 이메일 인증 import
@@ -50,7 +51,8 @@ import base64
 import binascii
 from django.http import HttpResponseRedirect, QueryDict
 
-
+# HOME import
+from rest_framework.pagination import LimitOffsetPagination
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
@@ -262,6 +264,32 @@ class MessageDetailView(APIView):
         return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
     
 
+class MessageReplyView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, message_id):
+        """ 쪽지 답장하기(작성하기) """
+
+        receiver = request.data.get('receiver')
+        mutable_data = request.data.copy()
+        mutable_data['receiver_email'] = receiver
+        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict.update(mutable_data)
+        serializer = MessageCreateSerializer(data=mutable_data_querydict)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(sender=request.user)
+            reply_message = serializer.instance
+            reply_message.reply_to = message_id
+            reply_message.save()
+            return Response(
+                {"message": "쪽지를 보냈습니다.", "message_id": reply_message.id},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 # 소셜 로그인
 
 class KakaoLoginView(APIView):
@@ -347,3 +375,22 @@ class KakaoLoginView(APIView):
             return Response(tokens, status=status.HTTP_200_OK)
         
         return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+# HOME
+class HomeUserPagination(LimitOffsetPagination):
+    default_limit = 12
+
+class HomeUserListView(APIView):
+    '''메인페이지 유저리스트 뷰'''
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = HomeUserPagination
+
+    def get(self, request):
+        users = User.objects.all()
+
+        paginator = self.pagination_class()
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        serializer = HomeUserListSerializer(paginated_users, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
