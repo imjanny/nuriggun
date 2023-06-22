@@ -19,21 +19,20 @@ from user.serializers import (
     UserSerializer,
     UserCreateSerializer,
     Util,
-    EmailThread,
     UserTokenObtainPairSerializer,
     PasswordResetSerializer,
     PasswordConfirmSerializer,
     KakaoLoginSerializer,
     HomeUserListSerializer,
+    PasswordChangeSerializer,
 )
 
 # 이메일 인증 import
-from base64 import urlsafe_b64encode, urlsafe_b64decode
+from base64 import urlsafe_b64encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import redirect
-from django.core.mail import EmailMessage
-from django.utils.encoding import force_bytes, DjangoUnicodeDecodeError, force_str
+from django.utils.encoding import force_bytes
 
 # 로그인 import
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -44,15 +43,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 # 비밀번호 재설정 import 
 from django.utils.translation import gettext_lazy as _
-from dj_rest_auth.views import PasswordResetView, PasswordResetConfirmView
-from django.core.mail import send_mail
-from django.contrib.auth.tokens import default_token_generator
-import base64
-import binascii
-from django.http import HttpResponseRedirect, QueryDict
+from django.http import QueryDict
 
 # HOME import
 from rest_framework.pagination import LimitOffsetPagination
+from django.db.models.functions import Random
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
@@ -85,14 +80,28 @@ class PasswordTokenCheckView(APIView):
                 {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
             )
 
-# 비밀번호 재설정
+# 비밀번호 재설정 완료
 class PasswordResetConfirmView(APIView):
     def put(self, request):
         serializer = PasswordConfirmSerializer(data=request.data)
         if serializer.is_valid():
             return Response({"message": "비밀번호 재설정 완료"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# 비밀번호 찾기(password change)
+class PasswordChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    authentication_classes = [JWTAuthentication]
 
+    def put(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        serializer = PasswordChangeSerializer(user, data=request.data, context={'user_id': user_id})
+        if request.user == user:
+            if serializer.is_valid():
+                return Response({"message": "비밀번호 변경 완료"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message": "수정권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 # ============회원가입=============
 
 class SignUpView(APIView):
@@ -385,7 +394,7 @@ class HomeUserListView(APIView):
     pagination_class = HomeUserPagination
 
     def get(self, request):
-        users = User.objects.all()
+        users = User.objects.all().order_by(Random())
 
         paginator = self.pagination_class()
         paginated_users = paginator.paginate_queryset(users, request)

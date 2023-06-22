@@ -24,6 +24,9 @@ urlpatterns = [
     ),  
     path("password/reset/confirm/", views.PasswordResetConfirmView.as_view(), name="password_reset_confirm_view"), 
     
+    # 비밀번호 찾기 
+    path("password/change/<int:user_id>/", views.PasswordChangeView.as_view(), name="password_change_view"),
+
     # /user/subscribe/<int:user_id>/ 구독
     path('subscribe/<int:user_id>/', views.SubscribeView.as_view(), name='subscribe_view'), 
 
