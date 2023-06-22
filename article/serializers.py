@@ -23,11 +23,10 @@ class ArticleSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     reaction = serializers.SerializerMethodField()
-
+    comments_count = serializers.SerializerMethodField()
 
     def get_user(self, obj):
-        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
-
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk, 'emial': obj.user.email}
 
     def get_reaction(self, obj):
         reaction_data = {
@@ -38,7 +37,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             'subsequent': obj.subsequent.count()
         }
         return reaction_data
-    
+
+    def get_comments_count(self, obj):
+        return obj.comment.count()
 
     # def get_reaction(self, obj):
     #     reaction_data = {
@@ -64,9 +65,8 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'content', 'user', 'created_at', 'updated_at', 'reaction', 'category', 'image']
-
-
+        fields = ['id', 'title', 'content', 'user', 'created_at',
+                  'updated_at', 'reaction', 'category', 'image', 'comments_count']
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
