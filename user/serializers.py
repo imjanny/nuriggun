@@ -69,7 +69,7 @@ class Util:
 
     @staticmethod
     def send_password_reset_email(user, reset_url):
-        subject = "비밀번호 재설정 제목"
+        subject = "[Nurriggun]비밀번호 재설정 인증 링크입니다."
         message = f"비밀번호 재설정 링크: {reset_url}"
         to_email = user.email
 
@@ -189,7 +189,7 @@ class PasswordResetSerializer(serializers.Serializer):
                 uidb64 = urlsafe_base64_encode(force_bytes(user.id))
                 token = PasswordResetTokenGenerator().make_token(user)
 
-                reset_url = f"http://localhost:8000/user/password/reset/check/{uidb64}/{token}/"
+                reset_url = f"https://nuriggun.xyz/user/password/reset/check/{uidb64}/{token}/"
         
                 Util.send_password_reset_email(user, reset_url)
                 return attrs
