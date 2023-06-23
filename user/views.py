@@ -70,9 +70,9 @@ class PasswordTokenCheckView(APIView):
             user = get_object_or_404(User, id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
 
-                return redirect("http://localhost:5500/user/password_reset_failed.html")
+                return redirect("https://teamnuri.xyz/user/password_reset_failed.html")
 
-            reset_url = f"http://localhost:5500/user/password_reset_confirm.html?id={uidb64}&token={token}"
+            reset_url = f"https://teamnuri.xyz/user/password_reset_confirm.html?id={uidb64}&token={token}"
             return redirect(reset_url)
 
         except UnicodeDecodeError:
@@ -114,7 +114,7 @@ class SignUpView(APIView):
             token = PasswordResetTokenGenerator().make_token(user)
 
             email = user.email
-            auth_url = f"http://localhost:8000/user/verify-email/{user_id}/{token}/"
+            auth_url = f"https://nuriggun.xyz/user/verify-email/{user_id}/{token}/"
             
             email_body = "이메일 인증" + auth_url
             message = {
@@ -140,9 +140,9 @@ class VerifyEmailView(APIView):
         if user is not None and token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return redirect("http://localhost:5500/user/login.html")
+            return redirect("https://teamnuri.xyz/user/login.html")
         else:
-            return redirect("http://localhost:5500/user/password_reset_failed.html")
+            return redirect("https://teamnuri.xyz/user/password_reset_failed.html")
 
 # 로그인
 class LoginView(TokenObtainPairView):
