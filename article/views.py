@@ -104,7 +104,7 @@ class ArticleListView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]  
     
     def get(self, request, user_id):  
-        articles = Article.objects.filter(user_id=user_id)
+        articles = Article.objects.filter(user_id=user_id).order_by('-created_at')
         serializer = ArticleListSerializer(articles, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
