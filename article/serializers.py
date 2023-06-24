@@ -70,7 +70,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'user', 'created_at',
-                  'updated_at', 'reaction', 'category', 'image', 'comments_count']
+                  'updated_at', 'reaction', 'category', 'image', 'image_content', 'comments_count']
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
@@ -82,9 +82,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "category", "image","created_at", "updated_at")
-
-   
+                  "category", "image", "image_content", "created_at", "updated_at")
 
 
 class ArticlesUpdateSerializer(serializers.ModelSerializer):
@@ -96,8 +94,8 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title",
-                  "content", "image", "CATEGORIES")
-   
+                  "content", "image", "image_content", "CATEGORIES")
+
 
 class ArticleListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
