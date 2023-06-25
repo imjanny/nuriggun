@@ -46,8 +46,10 @@ class HomeSerializer(serializers.ModelSerializer):
 
 class ArticleSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    updated_at = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    created_at = serializers.DateTimeField(
+        format='%Y-%m-%d %H:%M:%S', read_only=True)
+    updated_at = serializers.DateTimeField(
+        format='%Y-%m-%d %H:%M:%S', read_only=True)
     reaction = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
 
@@ -132,7 +134,7 @@ class CommentSerializer(serializers.ModelSerializer):
         format='%Y-%m-%d', read_only=True)
 
     def get_user(self, obj):
-        return {'nickname': obj.user.nickname, 'pk': obj.user.pk}
+        return {'nickname': obj.user.nickname, 'pk': obj.user.pk, 'profile_img': str(obj.user.profile_img)}
 
     class Meta:
         model = Comment
