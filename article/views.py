@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
-from article.models import Article, Comment, CommentReaction
+from article.models import Article, Comment, CommentReaction, User
 from article.serializers import (
     HomeSerializer,
     ArticleSerializer,
@@ -179,10 +179,10 @@ class ScrapListView(APIView):
    
 # ----------------------------------- 스크랩 한 게시글 보기 -----------------------------------
 
-    def get(self, request):
-        user = request.user
-        article = user.scrap.all()
-        serializer = ArticleSerializer(article, many=True)
+    def get(self, request, user_id):
+        user = get_object_or_404(User, pk=user_id)
+        articles = Article.objects.filter(scrap=user)
+        serializer = ArticleListSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
