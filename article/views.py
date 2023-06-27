@@ -49,15 +49,11 @@ class HomeView(APIView):
             ).order_by("-comments_count")
         elif ordering == "best":
             today = timezone.localtime(timezone.now())
-            start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timezone.timedelta(hours=9)
+            start = today.replace(hour=0, minute=0, second=0, microsecond=0) 
+            
             articles = Article.objects.filter(created_at__gte=start).annotate(
                 reaction_count=Count("great") + Count("sad") + Count("good") + Count("angry") + Count("subsequent")
             ).order_by("-reaction_count")
-            if articles.exists():
-                print("베스트 게시글이 존재합니다.")
-            else:
-                print("오늘 생성된 베스트 게시글이 없습니다.")
-                return Response([], status=status.HTTP_200_OK)
 
         elif ordering is None:
             articles = Article.objects.all()
