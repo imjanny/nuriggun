@@ -10,6 +10,10 @@ import threading
 from django.core.mail import EmailMessage
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes, force_str
+from rest_framework import exceptions
 
 # 구독
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -172,12 +176,6 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
     
 #=========== 비밀번호 재설정 ============
-
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
-from rest_framework import exceptions
 
 class PasswordResetSerializer(serializers.Serializer):
         email = serializers.EmailField()
