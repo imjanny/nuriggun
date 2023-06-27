@@ -10,7 +10,7 @@ urlpatterns = [
 
     # 회원가입(이메일인증)
     path('signup/', views.SignUpView.as_view(), name='sign_up_view'),
-    path("verify-email/b'<str:uidb64>'/<str:token>/",views.VerifyEmailView.as_view(), name='verify-email'),
+    path("verify-email/<str:uidb64>/<str:token>/",views.VerifyEmailView.as_view(), name='verify-email'),
 
     # 로그인
     path("login/", views.LoginView.as_view(), name="login_view"),

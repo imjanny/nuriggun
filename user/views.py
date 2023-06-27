@@ -62,16 +62,13 @@ class PasswordResetView(APIView):
 # 비밀번호 재설정 토큰 확인
 class PasswordTokenCheckView(APIView):
     def get(self, request, uidb64, token):
-        print("토큰체크 실행확인")
         try:     
             user_id = urlsafe_base64_decode(uidb64).decode()
             print(user_id)
 
             user = get_object_or_404(User, id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
-
                 return redirect("https://teamnuri.xyz/user/password_reset_failed.html")
-
             reset_url = f"https://teamnuri.xyz/user/password_reset_confirm.html?id={uidb64}&token={token}"
             return redirect(reset_url)
 
@@ -110,7 +107,7 @@ class SignUpView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            user_id = urlsafe_b64encode(force_bytes(user.pk))
+            user_id = urlsafe_b64encode(force_bytes(user.pk)).decode('utf-8')
             token = PasswordResetTokenGenerator().make_token(user)
 
             email = user.email
