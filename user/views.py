@@ -218,9 +218,15 @@ class MessageInboxView(APIView):
 
     def get(self, request):
         user = self.request.user
-        messages = Message.objects.filter(receiver=user)
+        messages = Message.objects.filter(receiver=user).order_by('-timestamp')
+        received_messages_count = messages.count()
+        unread_count = messages.filter(is_read=False).count()
         serializer = MessageDetailSerializer(messages, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            {"message_count": received_messages_count,
+             "unread_count": unread_count,
+             "messages": serializer.data},
+            status=status.HTTP_200_OK)
 
 
 class MessageSentView(APIView):
@@ -259,6 +265,13 @@ class MessageDetailView(APIView):
     def get(self, request, message_id):
         """ 쪽지 상세보기 """
         message = get_object_or_404(Message, id=message_id)
+        user = request.user.email
+        receiver = message.receiver.email
+
+        if user == receiver and not message.is_read:
+            message.is_read = True
+            message.save()
+
         serializer = MessageDetailSerializer(message)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
