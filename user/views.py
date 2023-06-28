@@ -12,7 +12,8 @@ from rest_framework import generics
 from .models import Message
 from .serializers import MessageDetailSerializer, MessageCreateSerializer
 
-from .models import User
+from .models import User,Report
+from article.models import Article, Comment
 
 from user.serializers import (
     SubscribeSerializer,
@@ -48,6 +49,7 @@ from django.http import QueryDict
 # HOME import
 from rest_framework.pagination import LimitOffsetPagination
 from django.db.models.functions import Random
+
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
@@ -403,3 +405,190 @@ class HomeUserListView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
+# 신고
+
+# class ReportView(APIView):
+#     def post(self, request, user_id):
+#         reporter = request.user
+#         reported_user = get_object_or_404(User, id=user_id)
+
+#         # 한 번에 한 명의 유저만 신고 가능
+        
+#         if Report.objects.filter(report_user=reporter, reported_user=reported_user).exists():
+#             return Response('이미 신고한 유저입니다.', status=status.HTTP_400_BAD_REQUEST)
+
+#         # Report 객체 생성
+#         report = Report(report_user=reporter, reported_user=reported_user, report_reason='신고 내용')
+#         report.save()
+#         # 신고된 유저의 신고 횟수 증가
+#         reported_user.report_count += 1
+        
+
+#         # k번 이상 신고된 유저인 경우 정지
+#         if reported_user.report_count >= 5:
+#             # 신고당한 유저 정지 처리
+#             reported_user.is_active = False
+#             reported_user.save()
+
+#             # 관련된 신고 내역 삭제
+#             Report.objects.filter(reported_user=reported_user).delete()
+#         if reported_user.report_count == 3:
+#             return Response('n번 이상 신고를 당한 악질유저입니다. 조치가 취해질 수 있습니다.', status=status.HTTP_200_OK)
+
+#         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
+
+# class ReportView(APIView):
+#     def post(self, request, user_id):
+#         reporter = request.user
+#         reported_user = get_object_or_404(User, id=user_id)
+
+#         if Report.objects.filter(report_user=reporter, reported_user=reported_user).exists():
+#             return Response('이미 신고한 유저입니다.', status=status.HTTP_400_BAD_REQUEST)
+
+#         report = Report(report_user=reporter, reported_user=reported_user, report_reason='신고 내용')
+#         report.save()
+
+#         reported_user.refresh_from_db()  # 최신 데이터로 업데이트
+
+#         if reported_user.report_count >= 5:
+#             if not reported_user.is_active:  # 이미 정지된 사용자인 경우 추가 조치하지 않음
+#                 return Response('n번 이상 신고를 당한 악질유저입니다. 조치가 취해집니다.', status=status.HTTP_200_OK)
+
+#             reported_user.is_active = False
+#             reported_user.save()
+#             Report.objects.filter(reported_user=reported_user).delete()
+
+#         if reported_user.report_count == 3:
+#             return Response('n번 이상 신고를 당한 악질유저입니다. 조치가 취해질 수 있습니다.', status=status.HTTP_200_OK)
+
+#         reported_user.report_count += 1
+#         reported_user.save()
+
+#         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
+
+
+# class ReportView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def post(self, request, user_id):
+#         # 신고 대상 유저 가져오기
+#         reported_user = get_object_or_404(User, pk=user_id)
+
+#         # 이미 신고한 유저인지 확인
+#         report_user = request.user
+#         if Report.objects.filter(report_user=report_user, reported_user=reported_user).exists():
+#             return Response({'message': '이미 신고한 유저입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # 신고 생성
+#         report = Report(report_user=report_user, reported_user=reported_user)
+#         report.save()
+
+#         # 제재 적용 여부 확인
+#         if self.should_apply_suspension(report_user, reported_user):
+#             report.apply_suspension()
+#             return Response({'message': '다른 기자에게도 신고를 당한 악질유저입니다. 조치를 취하겠습니다.'}, status=status.HTTP_205_RESET_CONTENT)
+
+#         return Response({'message': '신고가 접수되었습니다.'}, status=status.HTTP_200_OK)
+
+#     def should_apply_suspension(self, report_user, reported_user):
+#         # 신고 횟수 확인
+#         report_count = Report.objects.filter(reported_user=reported_user).count()
+
+#         # 신고 횟수가 5회 이상인 경우 제재 적용
+#         if report_count >= 5:
+#             return True
+
+#         return False
+
+
+
+# class ReportView(APIView):
+#     def post(self, request, user_id):
+#         reporter = request.user
+#         reported_user = get_object_or_404(User, id=user_id)
+
+#         if Report.objects.filter(report_user=reporter, reported_user=reported_user).exists():
+#             return Response({'message': '이미 신고한 유저입니다.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Report 객체 생성
+#         report = Report(report_user=reporter, reported_user=reported_user, report_reason='신고 내용')
+#         report.save()
+
+#         # 신고된 유저의 신고 횟수 증가
+#         reported_user.report_count += 1
+#         reported_user.save()
+
+#         if reported_user.report_count >= 5:
+#             # 유저 정지 처리 또는 필요한 추가 작업 수행
+#             return Response({'message': 'n번 이상 신고를 당한 악질유저입니다. 조치가 취해질 수 있습니다.'}, status=status.HTTP_200_OK)
+
+#         return Response({'message': '신고가 접수되었습니다.'}, status=status.HTTP_200_OK)
+
+
+
+# class ReportView(APIView):
+#     def post(self, request, user_id):
+#         reporter = request.user
+#         reported_user = get_object_or_404(User, id=user_id)
+
+#         # 한 번에 한 명의 유저만 신고 가능
+#         if Report.objects.filter(user=reporter, reported_user=reported_user).exists():
+#             return Response('이미 신고한 유저입니다.', status=status.HTTP_400_BAD_REQUEST)
+
+#         # Report 객체 생성
+#         report = Report(user=reporter, reported_user=reported_user,)
+#         report.save()
+
+#         # 신고된 유저의 신고 횟수 증가
+#         reported_user.report_count += 1
+#         reported_user.save()
+
+#         # k번 이상 신고된 유저인 경우 정지
+#         if reported_user.report_count >= 3:
+#             # 신고당한 유저 정지 처리
+#             reported_user.is_active = False
+#             reported_user.save()
+
+#             # 관련된 신고 내역 삭제
+#             Report.objects.filter(reported_user=reported_user).delete()
+
+
+#         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
+
+
+class ReportView(APIView):
+    def post(self, request, user_id):
+        reporter = request.user
+        reported_user = get_object_or_404(User, id=user_id)
+
+        if reporter == reported_user:
+            return Response('자신을 신고할 수 없습니다.', status=status.HTTP_403_FORBIDDEN)
+
+        # 한 번에 한 명의 유저만 신고 가능
+        if Report.objects.filter(user=reporter, reported_user=reported_user).exists():
+            return Response('이미 신고한 유저입니다.', status=status.HTTP_400_BAD_REQUEST)
+
+        # Report 객체 생성
+        report = Report(user=reporter, reported_user=reported_user,)
+        report.save()
+
+        # 신고된 유저의 신고 횟수 증가
+        reported_user.report_count += 1
+        reported_user.save()
+
+        # k번 이상 신고된 유저인 경우 정지
+        if reported_user.report_count >= 5:
+            # 신고당한 유저 정지 처리
+            reported_user.is_active = False
+            reported_user.save()
+
+            # 관련된 신고 내역 삭제
+            Report.objects.filter(reported_user=reported_user).delete()
+            Article.objects.filter(user=reported_user).delete()
+            Comment.objects.filter(user=reported_user).delete()
+
+            return Response('정지된 악질 유저입니다.', status=status.HTTP_200_OK)
+        
+        return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)

@@ -49,7 +49,7 @@ class User(AbstractBaseUser):
     is_staff = models.BooleanField("스태프",default=False)
     created_at = models.DateTimeField("생성일",auto_now_add=True)
     updated_at = models.DateTimeField("수정일",auto_now=True)
-
+    report_count = models.PositiveIntegerField(default=0)
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -88,3 +88,18 @@ class Message(models.Model):
 
     def __str__(self):
         return self.title
+    
+#신고 기능
+#UniqueConstraint 한번에 한 명의 유저만 신고
+class Report(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='report_user')
+    reported_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_received')
+    
+   
+   
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "reported_user",], name="unique_report"
+            )
+        ]

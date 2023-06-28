@@ -43,5 +43,8 @@ urlpatterns = [
     path('messages/<int:message_id>/', views.MessageDetailView.as_view(), name='message_detail'),
     path('messages/<int:message_id>/reply/', views.MessageReplyView.as_view(), name='message_reply'),
 
+    # 신고
+    path('report/<int:user_id>/report/', views.ReportView.as_view(), name='report_user'),
+
 ]
 
