@@ -267,7 +267,12 @@ class MessageDetailView(APIView):
     def get(self, request, message_id):
         """ 쪽지 상세보기 """
         message = get_object_or_404(Message, id=message_id)
-        user = request.user.email
+        
+        if request.user.is_authenticated:
+            user = request.user.email
+        else:
+            user = None
+
         receiver = message.receiver.email
 
         if user == receiver and not message.is_read:
