@@ -85,6 +85,7 @@ class Message(models.Model):
     content = models.TextField()
     image = models.ImageField(upload_to='message_images/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField("읽음 표시", default=False)
 
     def __str__(self):
         return self.title
