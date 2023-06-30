@@ -76,6 +76,8 @@ class ArticleReaction(models.Model):
     def __str__(self):
         return str(self.article)
 
+
+
 #------------------------- 댓글 모델 -------------------------
 
 class Comment(models.Model):

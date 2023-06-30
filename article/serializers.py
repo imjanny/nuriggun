@@ -153,4 +153,4 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class ArticleSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ["title","content","id",]
+        fields = ["title","content","id","image"]
