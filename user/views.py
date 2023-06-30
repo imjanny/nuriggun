@@ -50,6 +50,12 @@ from django.http import QueryDict
 from rest_framework.pagination import LimitOffsetPagination
 from django.db.models.functions import Random
 
+# 메일보내기
+
+from django.core.mail import EmailMessage
+import threading
+from django.conf import settings
+
 # ============비밀번호 재설정=============
 
 # 이메일 보내기
@@ -431,6 +437,98 @@ class HomeUserListView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# 정지 당한 유저의 안내문
+
+
+
+#신고
+
+
+# class EmailThread(threading.Thread):
+#     def __init__(self, subject, body, to_email):
+#         self.subject = subject
+#         self.body = body
+#         self.to_email = to_email
+#         threading.Thread.__init__(self)
+
+#     def run(self):
+#         msg = EmailMessage(
+#             subject=self.subject,
+#             body=self.body,
+#             from_email=settings.DEFAULT_FROM_EMAIL,
+#             to=[self.to_email],
+#         )
+#         msg.send()
+
+# class ReportView(APIView):
+#     def post(self, request, user_id):
+#         reporter = request.user
+#         reported_user = get_object_or_404(User, id=user_id)
+
+#         if reporter == reported_user:
+#             return Response('자신을 신고할 수 없습니다.', status=status.HTTP_403_FORBIDDEN)
+
+#         # 한 번에 한 명의 유저만 신고 가능
+#         if Report.objects.filter(user=reporter, reported_user=reported_user).exists():
+#             return Response('이미 신고한 유저입니다.', status=status.HTTP_400_BAD_REQUEST)
+
+#         # Report 객체 생성
+#         report = Report(user=reporter, reported_user=reported_user,)
+#         report.save()
+
+#         # 신고된 유저의 신고 횟수 증가
+#         reported_user.report_count += 1
+#         reported_user.save()
+
+#         # k번 이상 신고된 유저인 경우 정지
+#         if reported_user.report_count >= 10:
+#             # 신고당한 유저 정지 처리
+#             reported_user.is_active = False
+#             reported_user.save()
+
+#             # 관련된 신고 내역 삭제
+#             Report.objects.filter(reported_user=reported_user).delete()
+#             Article.objects.filter(user=reported_user).delete()
+#             Comment.objects.filter(user=reported_user).delete()
+
+
+#             # 정지된 유저에게 메일 전송
+#             subject = "[Nurriggun] 계정 정지 안내"
+#             message = f"안녕하세요, {reported_user.nickname}님!\n\n계정이 정지되었습니다.\n문의 사항이 있으신 경우, 홈페이지의 '문의하기' 채팅을 이용해 주세요."
+#             to_email = reported_user.email
+
+#             email = EmailMessage(
+#                 subject=subject,
+#                 body=message,
+#                 to=[to_email],
+#             )
+#             EmailThread(email).start()
+
+
+#             return Response('정지된 악질 유저입니다.', status=status.HTTP_200_OK)
+        
+#         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
+
+
+
+
+# 신고 알림
+ 
+class EmailThread(threading.Thread):
+    def __init__(self, subject, message, to_email):
+        self.subject = subject
+        self.message = message
+        self.to_email = to_email
+        threading.Thread.__init__(self)
+
+    def run(self):
+        email = EmailMessage(
+            subject=self.subject,
+            body=self.message,
+            to=[self.to_email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+        )
+        email.send()
 
 #신고
 
@@ -455,7 +553,7 @@ class ReportView(APIView):
         reported_user.save()
 
         # k번 이상 신고된 유저인 경우 정지
-        if reported_user.report_count >= 5:
+        if reported_user.report_count >= 2:
             # 신고당한 유저 정지 처리
             reported_user.is_active = False
             reported_user.save()
@@ -464,6 +562,14 @@ class ReportView(APIView):
             Report.objects.filter(reported_user=reported_user).delete()
             Article.objects.filter(user=reported_user).delete()
             Comment.objects.filter(user=reported_user).delete()
+
+            # 정지된 유저에게 메일 전송
+            subject = "[Nurriggun] 계정 정지 안내"
+            message = f"안녕하세요, {reported_user.nickname}님!\n\n계정이 정지되었습니다.\n문의 사항이 있으신 경우, 홈페이지의 '문의하기' 채팅을 이용해 주세요."
+            to_email = reported_user.email
+
+            email = EmailThread(subject, message, to_email)
+            email.start()
 
             return Response('정지된 악질 유저입니다.', status=status.HTTP_200_OK)
         
