@@ -15,7 +15,7 @@ def summary(content):
             summary_content = queryset.order_by("-id").first()
         response = openai.Completion.create(
             engine='text-davinci-003',
-            prompt="summarize what will follow in Korean"+content,
+            prompt="Please summarize this news article in Korean, focusing only on the key points. Exclude any unnecessary information such as greetings or reporter information. The summary should be around 500 tokens. \n\n[News Article]"+content,
             max_tokens=500,
             temperature=0.3,
             n=1,
