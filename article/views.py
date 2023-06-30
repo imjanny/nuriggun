@@ -15,6 +15,7 @@ from article.serializers import (
 
 from rest_framework import permissions
 from rest_framework import generics, filters
+from .summary import summary
 
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
@@ -81,13 +82,16 @@ class ArticleView(APIView):
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 # ------------------------------------ 게시글 작성 -------------------------------------
 
-    def post(self, request): 
+    def post(self, request):
         serializer = ArticleCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
+            content = serializer.validated_data["content"]
+            summary_content = summary(content)
+            serializer.validated_data["summary"] = summary_content
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

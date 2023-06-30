@@ -23,7 +23,7 @@ class Article(models.Model):
     angry = models.ManyToManyField(User, blank=True, related_name="angry")
     good = models.ManyToManyField(User, blank=True, related_name="good")
     subsequent = models.ManyToManyField(User, blank=True, related_name="subsequent")
-
+    summary = models.TextField(max_length=300, blank=True, verbose_name="요약")
 
     
 #------------------------- 카테고리 모델 -------------------------
