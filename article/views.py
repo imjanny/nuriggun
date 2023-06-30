@@ -10,12 +10,12 @@ from article.serializers import (
     ArticleCreateSerializer,
     CommentSerializer,
     CommentCreateSerializer,
-    ArticleSearchSerializer
-    )
+    ArticleSearchSerializer,
+)
 
 from rest_framework import permissions
 from rest_framework import generics, filters
-from .summary import summary
+from .summary import summary, SummaryThread
 
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
@@ -89,9 +89,11 @@ class ArticleView(APIView):
         if serializer.is_valid():
             serializer.save(user=request.user)
             content = serializer.validated_data["content"]
-            summary_content = summary(content)
-            serializer.validated_data["summary"] = summary_content
-            serializer.save()
+            thread = SummaryThread(content)
+            thread.start()
+            # summary_content = summary(content)
+            # serializer.validated_data["summary"] = summary_content
+            # serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
