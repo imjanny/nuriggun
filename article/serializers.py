@@ -72,7 +72,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'title', 'content', 'user', 'created_at',
-                  'updated_at', 'reaction', 'category', 'image', 'image_content', 'comments_count']
+                  'updated_at', 'reaction', 'category', 'image', 'image_content', 'comments_count', 'summary']
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
@@ -80,11 +80,11 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         return obj.user.nickname
-    
+
     class Meta:
         model = Article
         fields = ("pk", "user", "title", "content",
-                  "category", "image", "image_content", "created_at", "updated_at")
+                  "category", "image", "image_content", "created_at", "updated_at", "summary")
 
 
 class ArticlesUpdateSerializer(serializers.ModelSerializer):
@@ -120,7 +120,7 @@ class ArticleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ["id", "title", "user", "image",
-                  "created_at", "category", "reaction"]
+                  "created_at", "category", "reaction", "summary"]
 
 
 #---------------------------- 댓글 ----------------------------
