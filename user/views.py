@@ -318,88 +318,99 @@ class MessageReplyView(generics.CreateAPIView):
 # 소셜 로그인
 
 class KakaoLoginView(APIView):
-    def post(self, request):
-        serializer = KakaoLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        code = serializer.validated_data["code"]
+  def post(self, request):
+    serializer = KakaoLoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    code = serializer.validated_data["code"]
 
-        # 인증 코드를 사용하여 액세스 토큰을 얻기 위해 카카오 서버에 요청
-        access_token_response = requests.post(
-            "https://kauth.kakao.com/oauth/token", 
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            data={
-                "grant_type": "authorization_code",
-                "client_id": os.environ.get("KAKAO_REST_API_KEY"),
-                "redirect_uri": "https://teamnuri.xyz/user/kakaocode.html",  # 카카오에 등록된 리다이렉트 URI
-                "code": code,
-            },
-        )
+    # 인증 코드를 사용하여 액세스 토큰을 얻기 위해 카카오 서버에 요청
+    access_token_response = requests.post(
+      "https://kauth.kakao.com/oauth/token", 
+      headers={"Content-Type": "application/x-www-form-urlencoded"},
+      data={
+        "grant_type": "authorization_code",
+        "client_id": os.environ.get("KAKAO_REST_API_KEY"),
+        "redirect_uri": "https://www.teamnuri.xyz/user/kakaocode.html", # 카카오에 등록된 리다이렉트 URI
+        "code": code,
+      },
+    )
 
-        # 액세스 토큰을 가져옴
-        access_token_data = access_token_response.json()
-        access_token = access_token_data.get("access_token")
+    # 액세스 토큰을 가져옴
+    access_token_data = access_token_response.json()
+    access_token = access_token_data.get("access_token")
 
-        # 액세스 토큰을 사용하여 사용자 정보를 얻기 위해 카카오 서버에 요청
-        user_info_response = requests.get( 
-            "https://kapi.kakao.com/v2/user/me",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
-            },
-        )
+    # 액세스 토큰을 사용하여 사용자 정보를 얻기 위해 카카오 서버에 요청
+    user_info_response = requests.get( 
+      "https://kapi.kakao.com/v2/user/me",
+      headers={
+        "Authorization": f"Bearer {access_token}",
+        "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+      },
+    )
 
-        # 사용자 정보를 가져옴
-        user_info_data = user_info_response.json()
-        kakao_email = user_info_data.get("kakao_account")["email"]
-        kakao_nickname = user_info_data.get("properties")["nickname"]
+    # 사용자 정보를 가져옴
+    user_info_data = user_info_response.json()
+    kakao_account = user_info_data.get("kakao_account")
+    if kakao_account is not None:
+      kakao_email = kakao_account.get("email")
+    else:
+      return Response({"error": "kakao_account 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+       
+    properties = user_info_data.get("properties")
+    if properties is not None:
+      kakao_nickname = properties.get("nickname")
+    else:
+      return Response({"error": "properties 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # 사용자 이메일을 사용하여 유저 필터링
-            user = User.objects.get(email=kakao_email)
-            social_user = SocialAccount.objects.filter(user=user).first()
+    kakao_id = user_info_data.get("id")
 
-            # 유저가 존재하고 소셜 로그인 사용자인 경우
-            if social_user:
-                # 카카오가 아닌 경우 에러 메시지
-                if social_user.provider != "kakao":
-                    return Response({"error": "카카오로 가입한 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+      # 사용자 이메일을 사용하여 유저 필터링
+      user = User.objects.get(email=kakao_email)
+      social_user = SocialAccount.objects.filter(user=user).first()
 
-                # 유저를 활성화하고 저장
-                user.is_active = True
-                user.save()
+      # 유저가 존재하고 소셜 로그인 사용자인 경우
+      if social_user:
+        # 카카오가 아닌 경우 에러 메시지
+        if social_user.provider != "kakao":
+          return Response({"error": "카카오로 가입한 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-                # 토큰 생성 및 반환
-                token_serializer = UserTokenObtainPairSerializer()
-                tokens = token_serializer.for_user(user)
-                return Response(tokens, status=status.HTTP_200_OK)
+        # 유저를 활성화하고 저장
+        user.is_active = True
+        user.save()
 
-            # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
-            if social_user is None:
-                return Response({"error": "이메일이 존재하지만, 소셜 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
+        # 토큰 생성 및 반환
+        token_serializer = UserTokenObtainPairSerializer()
+        tokens = token_serializer.for_user(user)
+        return Response(tokens, status=status.HTTP_200_OK)
 
-        # 유저가 존재하지 않는 경우
-        except User.DoesNotExist:
-            # 신규 유저를 생성하고 비밀번호를 설정하지 않음
-            new_user = User.objects.create(nickname=kakao_nickname, email=kakao_email)
-            new_user.set_unusable_password()
-            new_user.is_active = True
-            new_user.save()
+      # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
+      if social_user is None:
+        return Response({"error": "이메일이 존재하지만, 소셜 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # 소셜 계정 생성
-            new_social_account = SocialAccount.objects.create(provider="kakao", user=new_user)
+    # 유저가 존재하지 않는 경우
+    except User.DoesNotExist:
+      # 신규 유저를 생성하고 비밀번호를 설정하지 않음
+      new_user = User.objects.create(nickname=kakao_nickname, email=kakao_email)
+      new_user.set_unusable_password()
+      new_user.is_active = True
+      new_user.save()
 
-            # allauth의 SocialApp
-            social_app = SocialApp.objects.get(provider="kakao")
+      # 소셜 계정 생성
+      new_social_account, created = SocialAccount.objects.get_or_create(provider="kakao", uid=kakao_id, user=new_user)
+      if created:
+        # allauth의 SocialApp
+        social_app = SocialApp.objects.get(provider="kakao")
 
-            # allauth의 SocialToken을 사용하여 토큰 생성
-            SocialToken.objects.create(app=social_app, account=new_social_account, token=access_token)
+        # allauth의 SocialToken을 사용하여 토큰 생성
+        SocialToken.objects.create(app=social_app, account=new_social_account, token=access_token)
 
-            # 신규 유저 생성
-            token_serializer = UserTokenObtainPairSerializer()
-            tokens = token_serializer.for_user(new_user)
-            return Response(tokens, status=status.HTTP_200_OK)
-        
-        return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
+      # 신규 유저 생성
+      token_serializer = UserTokenObtainPairSerializer()
+      tokens = token_serializer.for_user(new_user)
+      return Response(tokens, status=status.HTTP_200_OK)
+     
+    return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 # HOME
 class HomeUserPagination(LimitOffsetPagination):
