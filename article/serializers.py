@@ -96,7 +96,7 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ("pk", "user", "title",
-                  "content", "image", "image_content", "CATEGORIES", "summary")
+                  "content", "image", "image_content", "CATEGORIES")
 
 
 class ArticleListSerializer(serializers.ModelSerializer):
