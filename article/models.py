@@ -13,7 +13,7 @@ class Article(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
     title = models.CharField(max_length=50, verbose_name="제목")
-    content = models.TextField(verbose_name="내용")
+    content = models.TextField(max_length=1650, verbose_name="내용")
     image = models.ImageField(verbose_name="게시글 이미지")
     image_content = models.TextField(verbose_name="사진 설명", null=True, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="생성시간")
@@ -23,7 +23,7 @@ class Article(models.Model):
     angry = models.ManyToManyField(User, blank=True, related_name="angry")
     good = models.ManyToManyField(User, blank=True, related_name="good")
     subsequent = models.ManyToManyField(User, blank=True, related_name="subsequent")
-
+    summary = models.TextField(blank=True, verbose_name="요약")
 
     
 #------------------------- 카테고리 모델 -------------------------

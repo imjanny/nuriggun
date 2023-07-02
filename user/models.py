@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.urls import reverse
+from django.core.mail import EmailMessage
 
 
 class UserManager(BaseUserManager):
@@ -95,9 +96,8 @@ class Message(models.Model):
 class Report(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,related_name='report_user')
     reported_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_received')
-    
-   
-   
+
+      
     class Meta:
         constraints = [
             models.UniqueConstraint(
