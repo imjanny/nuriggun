@@ -104,3 +104,12 @@ class Report(models.Model):
                 fields=["user", "reported_user",], name="unique_report"
             )
         ]
+
+
+# 이메일 알림 동의
+class EmailNotificationSettings(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    email_notification = models.BooleanField("이메일 알림 동의", default=False)
+
+    def __str__(self):
+        return str(self.user.email)
