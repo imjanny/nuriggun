@@ -47,7 +47,7 @@ urlpatterns = [
     path('report/<int:user_id>/report/', views.ReportView.as_view(), name='report_user'),
 
     # 이메일 알림 동의
-    path('email/notification/', views.NotificationView.as_view(), name='email_notification'),
+    path('email/notification/', views.EmailNotificationView.as_view(), name='email_notification'),
     
 ]
 
