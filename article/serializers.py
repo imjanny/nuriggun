@@ -143,4 +143,4 @@ class ArticleSearchSerializer(serializers.ModelSerializer):
     '''검색 시리얼라이저'''
     class Meta:
         model = Article
-        fields = ["title","content","id","image"]
+        fields = ["title","content","id","image", "category"]
