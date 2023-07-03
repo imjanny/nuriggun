@@ -12,7 +12,7 @@ from rest_framework import generics
 from .models import Message
 from .serializers import MessageDetailSerializer, MessageCreateSerializer
 
-from .models import User,Report
+from .models import User,Report, EmailNotificationSettings
 from article.models import Article, Comment
 
 from user.serializers import (
@@ -26,6 +26,7 @@ from user.serializers import (
     KakaoLoginSerializer,
     HomeUserListSerializer,
     PasswordChangeSerializer,
+    EmailNotificationSerializer,
 )
 
 # 이메일 인증 import
@@ -574,3 +575,23 @@ class ReportView(APIView):
             return Response('정지된 악질 유저입니다.', status=status.HTTP_200_OK)
         
         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
+    
+    
+# 이메일 알림 동의
+class EmailNotificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        email_notification = EmailNotificationSettings.objects.filter(user=request.user)
+        email_notification_serializer = EmailNotificationSerializer(email_notification, many=True)
+        return Response(email_notification_serializer.data)
+
+    def post(self, request):
+        email_notification_settings = get_object_or_404(EmailNotificationSettings, user=request.user)
+        email_notification_settings.email_notification = not email_notification_settings.email_notification
+        email_notification_settings.save()
+
+        if email_notification_settings.email_notification:
+            return Response("이메일 알림에 동의하셨습니다", status=status.HTTP_200_OK)
+        else:
+            return Response("이메일 알림을 취소하셨습니다", status=status.HTTP_205_RESET_CONTENT)

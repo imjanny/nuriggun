@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from user.models import User
+from user.models import User, EmailNotificationSettings
 from article.models import Article
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -331,3 +331,10 @@ class HomeUserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['pk', 'email', 'nickname', 'subscribe', 'profile_img']
+
+
+"""이메일 알림 동의 시리얼라이저"""
+class EmailNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailNotificationSettings
+        fields = "__all__"
