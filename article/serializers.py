@@ -42,9 +42,9 @@ class HomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = "__all__"
-#---------------------------- 게시글 ----------------------------
 
 class ArticleSerializer(serializers.ModelSerializer):
+    '''게시글 시리얼라이저'''
     user = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(
         format='%Y-%m-%d %H:%M:%S', read_only=True)
@@ -74,7 +74,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'content', 'user', 'created_at',
                   'updated_at', 'reaction', 'category', 'image', 'image_content', 'comments_count', 'summary']
 
-
 class ArticleCreateSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
 
@@ -86,7 +85,6 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
         fields = ("pk", "user", "title", "content",
                   "category", "image", "image_content", "created_at", "updated_at", "summary")
 
-
 class ArticlesUpdateSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
 
@@ -97,7 +95,6 @@ class ArticlesUpdateSerializer(serializers.ModelSerializer):
         model = Article
         fields = ("pk", "user", "title",
                   "content", "image", "image_content", "CATEGORIES")
-
 
 class ArticleListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
@@ -122,11 +119,8 @@ class ArticleListSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "user", "image",
                   "created_at", "category", "reaction", "summary"]
 
-
-#---------------------------- 댓글 ----------------------------
-
-
 class CommentSerializer(serializers.ModelSerializer):
+    '''댓글 시리얼라이저'''
     user = serializers.SerializerMethodField()
     comment_created_at = serializers.DateTimeField(
         format='%Y-%m-%d', read_only=True)
@@ -140,17 +134,13 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         exclude = ('article',)  # 게시글 필드 빼고 보여주기 
 
-
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ("comment",)
 
-
-
-#---------------------------- 검색 기능 ----------------------------
-
 class ArticleSearchSerializer(serializers.ModelSerializer):
+    '''검색 시리얼라이저'''
     class Meta:
         model = Article
         fields = ["title","content","id","image"]
