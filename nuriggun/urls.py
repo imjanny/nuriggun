@@ -24,6 +24,7 @@ urlpatterns = [
     path('user/', include('user.urls')),
     path('article/', include('article.urls')),
     path('accounts/', include('allauth.urls')),
+    path('weather/', include('weather.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL,
