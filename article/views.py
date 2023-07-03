@@ -16,11 +16,9 @@ from article.serializers import (
 from rest_framework import permissions
 from rest_framework import generics, filters
 from .summary import summary, SummaryThread
-
 # ======== 메인페이지 관련 import =========
 from rest_framework.pagination import LimitOffsetPagination
 from django.db.models import Count
-from datetime import date, timedelta
 from django.utils import timezone
 # ========= 메인페이지 view =========
 class HomePagination(LimitOffsetPagination):
@@ -65,15 +63,12 @@ class HomeView(APIView):
         serializer = HomeSerializer(paginated_articles, many=True)
         
         return paginator.get_paginated_response(serializer.data)
-     
-#------------------------------------- 게시글 생성 ------------------------------------- 
 
 class ArticleView(APIView): 
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-# ------------------------------------ 게시글 목록 -------------------------------------
-    
+
     def get(self, request, category=None):
+        '''게시글 목록'''
         if category:
             articles = Article.objects.filter(category=category)
         else:
@@ -82,27 +77,20 @@ class ArticleView(APIView):
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# ------------------------------------ 게시글 작성 -------------------------------------
-
     def post(self, request):
+        '''게시글 작성'''
         serializer = ArticleCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
             content = serializer.validated_data["content"]
             thread = SummaryThread(content)
             thread.start()
-            # summary_content = summary(content)
-            # serializer.validated_data["summary"] = summary_content
-            # serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ------------------------------------ 게시글 리스트 보기 -------------------------------------      
-
-
 class ArticleListView(APIView):
+    '''게시글 리스트 보기'''
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]  
     
     def get(self, request, user_id):  
@@ -111,10 +99,8 @@ class ArticleListView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-
-# ------------------------------------ 게시글 상세페이지 -------------------------------------      
-
 class ArticleDetailView(APIView):
+    '''게시글 상세페이지'''
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, article_id):
@@ -122,7 +108,7 @@ class ArticleDetailView(APIView):
         serializer = ArticleSerializer(article)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def patch(self, request, article_id): # patch 원하는 것만 수정이 가능하다.!
+    def patch(self, request, article_id):
         article = get_object_or_404(Article, id=article_id)
         if request.user == article.user:
             serializer = ArticleCreateSerializer(
@@ -144,11 +130,8 @@ class ArticleDetailView(APIView):
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
-
-# ------------------------------------ 게시글 스크랩 -------------------------------------
-
-
 class ScrapView(APIView):
+    '''게시글 스크랩'''
     def post(self, request, article_id):
         article = get_object_or_404(Article, id=article_id)
         if request.user in article.scrap.all():
@@ -164,12 +147,10 @@ class ScrapView(APIView):
         scrap_count = article.count_scrap()
         return Response({'scrap': scrap_count})
     
-  
-
-#------------------------------------ 게시글 스크랩 리스트 -------------------------------------
-
 class ScrapListView(APIView):
+    '''게시글 스크랩 리스트'''
     def post(self, request, article_id):
+        '''게시글 스크랩하기'''
         article = get_object_or_404(Article, id=article_id)
         if request.user in article.scrap.all():
             article.scrap.remove(request.user)
@@ -177,22 +158,16 @@ class ScrapListView(APIView):
         else:
             article.scrap.add(request.user)
             return Response('스크랩', status=status.HTTP_200_OK)    
-   
-   
-# ----------------------------------- 스크랩 한 게시글 보기 -----------------------------------
 
     def get(self, request, user_id):
+        '''스크랩 한 게시글 보기'''
         user = get_object_or_404(User, pk=user_id)
         articles = Article.objects.filter(scrap=user)
         serializer = ArticleListSerializer(articles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-#---------------------------------- 게시글 좋아요 5종 반응 ---------------------------------
-
-
 class ArticleReactionView(APIView):
+    '''게시글 좋아요 5종 반응'''
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, article_id):
@@ -204,7 +179,7 @@ class ArticleReactionView(APIView):
         reaction = request.data.get('reaction')
 
         if reaction in ['great', 'sad', 'angry', 'good', 'subsequent']:
-            reaction_field = getattr(article, reaction) #getattr 아직 잘모르지만 나중에?
+            reaction_field = getattr(article, reaction) 
 
             if request.user in reaction_field.all():
                 # 사용자가 이미 반응을 한 상태이므로 반응을 취소
@@ -217,33 +192,25 @@ class ArticleReactionView(APIView):
         else:
             return Response({"error": "유효하지 않은 반응 타입입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-
-#----------------------------------- 검색 기능 -----------------------------------
-
-
 class ArticleSearchView(generics.ListCreateAPIView):
+    '''검색 기능'''
     search_fields = ["title", "content","id",]
     filter_backends = (filters.SearchFilter,)
     queryset = Article.objects.all()
     serializer_class = ArticleSearchSerializer
 
-    
-    
-
-# ----- 댓글 시작 -----
-
 class CommentView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    # 게시글 댓글 보기
     def get(self, request, article_id):
+        '''댓글 보기'''
         article = get_object_or_404(Article, id=article_id)
         comments = article.comment.all()
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    # 댓글 작성
     def post(self, request, article_id):
+        '''댓글 작성'''
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
             request.user.save()
@@ -252,8 +219,8 @@ class CommentView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-    # 댓글 수정
     def put(self, request, comment_id):
+        '''댓글 수정'''
         comment = get_object_or_404(Comment, id=comment_id)
         if request.user == comment.user:
             serializer = CommentCreateSerializer(comment, data=request.data)
@@ -267,6 +234,7 @@ class CommentView(APIView):
         
     # 댓글 삭제
     def delete(self, request, comment_id):
+        '''댓글 삭제'''
         comment = get_object_or_404(Comment, id=comment_id)
         if request.user == comment.user:
             comment.delete()
@@ -274,14 +242,11 @@ class CommentView(APIView):
         else:
             return Response(
                 {"message": "댓글 작성자만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
-        
-
-# ----- 댓글 반응 -----
 
 class CommentLikeView(APIView):
+    '''댓글 좋아요'''
     permission_classes = [permissions.IsAuthenticated]
 
-    # 좋아요
     def post(self, request, comment_id):
         comment = get_object_or_404(Comment, id=comment_id)
         user = request.user
@@ -313,9 +278,9 @@ class CommentLikeView(APIView):
  
 
 class CommentHateView(APIView):
+    '''댓글 싫어요'''
     permission_classes = [permissions.IsAuthenticated]
 
-    # 싫어요
     def post(self, request, comment_id):
         comment = get_object_or_404(Comment, id=comment_id)
         user = request.user
@@ -344,5 +309,3 @@ class CommentHateView(APIView):
             comment.hate_count +=1
             comment.save()
             return Response("싫어요를 했습니다.", status=status.HTTP_200_OK)
-    
-# ----- 댓글 끝 -----

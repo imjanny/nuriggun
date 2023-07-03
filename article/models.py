@@ -1,7 +1,5 @@
 from django.db import models
 from user.models import User
-import os
-from datetime import date
 from django.urls import reverse  # 테스트 코드
 
 
