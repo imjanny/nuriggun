@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-
 from user.models import User, EmailNotificationSettings
 from article.models import Article
 from rest_framework import serializers
@@ -9,11 +8,11 @@ from .models import Message
 import threading
 from django.core.mail import EmailMessage
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
 from rest_framework import exceptions
+import re
 
 # 구독
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -38,29 +37,27 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["subscribe"]
-        
-# =============== 프로필 ================
+
+# 프로필  
 class ProfileArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article 
         fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
+    '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
     subscribe_count = serializers.SerializerMethodField()
     subscribe = serializers.StringRelatedField(many=True, required=False)
 
     def get_subscribe_count(self, obj):
         return obj.subscribe.count()
 
-    '''유저 프로필 GET, PATCH, DELETE용 시리얼라이저'''
-    # user_articles = ProfileArticleSerializer(many=True, read_only=True)
-
     class Meta:
         model = User
         fields = ('id', 'pk', 'email', 'nickname', 'interest', 'profile_img', 'subscribe', 'subscribe_count')
         read_only_fields = ('email',)
 
-# =============== 이메일 비동기전송 ==============   
+# 이메일 비동기전송  
 class Util:
     @staticmethod
     def send_email(message):
@@ -94,9 +91,7 @@ class EmailThread(threading.Thread):
         self.email.send()
 
 
-# =============== 회원가입(이메일인증) ==============   
-import re
-
+# 회원가입(이메일인증)  
 class UserCreateSerializer(serializers.ModelSerializer):
     '''회원가입'''
     class Meta:
@@ -160,6 +155,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 # 로그인
 class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
+    '''로그인'''
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -175,9 +171,9 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
             'access': str(refresh.access_token),
         }
     
-#=========== 비밀번호 재설정 ============
-
+# 비밀번호 재설정
 class PasswordResetSerializer(serializers.Serializer):
+        '''비밀번호 재설정 링크 전송'''
         email = serializers.EmailField()
 
         def validate(self, attrs):
@@ -198,6 +194,7 @@ class PasswordResetSerializer(serializers.Serializer):
                 )
 
 class PasswordConfirmSerializer(serializers.Serializer):
+    '''비밀번호 재설정 완료'''
     password = serializers.CharField(write_only=True, error_messages={
         'required': '비밀번호를 입력해주세요.',
         'blank': '비밀번호를 입력해주세요.',
@@ -238,9 +235,7 @@ class PasswordConfirmSerializer(serializers.Serializer):
             return super().validate(attrs)
 
         except User.DoesNotExist:
-            raise serializers.ValidationError(detail={"user": "존재하지 않는 회원입니다."})
-        
-#=========== 비밀번호 재설정 끝 ============    
+            raise serializers.ValidationError(detail={"user": "존재하지 않는 회원입니다."}) 
 
 # 비밀번호 찾기
 class PasswordChangeSerializer(serializers.ModelSerializer):
@@ -279,8 +274,6 @@ class PasswordChangeSerializer(serializers.ModelSerializer):
         return attrs
 
 # 쪽지
-
-
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
@@ -325,7 +318,7 @@ class KakaoLoginSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
     access_token = serializers.CharField(required=False)
 
-# ============ HOME ==============
+# HOME 
 class HomeUserListSerializer(serializers.ModelSerializer):
     '''메인페이지 용 유저리스트 시리얼라이저'''
     class Meta:
