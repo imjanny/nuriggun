@@ -11,7 +11,7 @@ from rest_framework import generics
 from .models import Message
 from .serializers import MessageDetailSerializer, MessageCreateSerializer
 
-from .models import User,Report, EmailNotificationSettings
+from .models import User, Report, EmailNotificationSettings
 from article.models import Article, Comment
 
 from user.serializers import (
@@ -39,9 +39,9 @@ from django.utils.encoding import force_bytes
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # 소셜 로그인 import
-from allauth.socialaccount.models import SocialAccount,SocialToken, SocialApp
+from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
 
-# 비밀번호 재설정 import 
+# 비밀번호 재설정 import
 from django.utils.translation import gettext_lazy as _
 from django.http import QueryDict
 
@@ -55,19 +55,21 @@ from django.core.mail import EmailMessage
 import threading
 from django.conf import settings
 
-class PasswordResetView(APIView):
-        def post(self, request):
-            '''비밀번호 재설정 이메일 전송'''
-            serializer = PasswordResetSerializer(data=request.data)
 
-            if serializer.is_valid():
-                return Response({"message": "비밀번호 재설정 이메일 전송"}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class PasswordResetView(APIView):
+    def post(self, request):
+        '''비밀번호 재설정 이메일 전송'''
+        serializer = PasswordResetSerializer(data=request.data)
+
+        if serializer.is_valid():
+            return Response({"message": "비밀번호 재설정 이메일 전송"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PasswordTokenCheckView(APIView):
     def get(self, request, uidb64, token):
         '''비밀번호 재설정 토큰 확인'''
-        try:     
+        try:
             user_id = urlsafe_base64_decode(uidb64).decode()
             print(user_id)
 
@@ -82,6 +84,7 @@ class PasswordTokenCheckView(APIView):
                 {"message": "링크가 유효하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED
             )
 
+
 class PasswordResetConfirmView(APIView):
     def put(self, request):
         '''비밀번호 재설정 완료'''
@@ -89,7 +92,8 @@ class PasswordResetConfirmView(APIView):
         if serializer.is_valid():
             return Response({"message": "비밀번호 재설정 완료"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
 class PasswordChangeView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     authentication_classes = [JWTAuthentication]
@@ -97,13 +101,15 @@ class PasswordChangeView(APIView):
     def put(self, request, user_id):
         '''비밀번호 변경'''
         user = get_object_or_404(User, id=user_id)
-        serializer = PasswordChangeSerializer(user, data=request.data, context={'user_id': user_id})
+        serializer = PasswordChangeSerializer(
+            user, data=request.data, context={'user_id': user_id})
         if request.user == user:
             if serializer.is_valid():
                 return Response({"message": "비밀번호 변경 완료"}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "수정권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
 
 class SignUpView(APIView):
     def post(self, request):
@@ -123,6 +129,7 @@ class SignUpView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class VerifyEmailView(APIView):
     def get(self, request, uidb64, token):
         '''이메일 인증'''
@@ -140,9 +147,11 @@ class VerifyEmailView(APIView):
         else:
             return redirect("https://teamnuri.xyz/user/password_reset_failed.html")
 
+
 class LoginView(TokenObtainPairView):
     '''로그인'''
     serializer_class = UserTokenObtainPairSerializer
+
 
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -153,7 +162,7 @@ class UserView(APIView):
         user = get_object_or_404(User, id=user_id)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
     def patch(self, request, user_id):
         '''프로필 수정하기'''
         user = get_object_or_404(User, id=user_id)
@@ -166,8 +175,8 @@ class UserView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "수정권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-        
-    def delete(self,request, user_id):
+
+    def delete(self, request, user_id):
         '''회원탈퇴 (계정 비활성화)'''
         user = get_object_or_404(User, id=user_id)
         if request.user == user:
@@ -175,7 +184,8 @@ class UserView(APIView):
             user.save()
             return Response({"message": "탈퇴완료"}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST) 
+            return Response({"message": "탈퇴권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SubscribeView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -189,8 +199,14 @@ class SubscribeView(APIView):
                 you.subscribes.remove(me)
                 return Response("구독 취소", status=status.HTTP_205_RESET_CONTENT)
             else:
-                you.subscribes.add(me)
-                return Response("구독 완료", status=status.HTTP_200_OK)
+                # 알림 설정
+                if not EmailNotificationSettings.objects.filter(user=me).exists():
+                    EmailNotificationSettings.objects.create(user=me)
+                    you.subscribes.add(me)
+                    return Response("구독 완료", status=status.HTTP_202_ACCEPTED)
+                else:
+                    you.subscribes.add(me)
+                    return Response("구독 완료", status=status.HTTP_200_OK)
         else:
             return Response("자신을 구독 할 수 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
@@ -205,6 +221,8 @@ class SubscribeView(APIView):
         )
 
 # 쪽지 관련 view
+
+
 class MessageInboxView(APIView):
     """ 받은 쪽지함 """
     permission_classes = [IsAuthenticated]
@@ -241,7 +259,8 @@ class MessageView(APIView):
         receiver_email = request.data.get('receiver')
         mutable_data = request.data.copy()
         mutable_data['receiver_email'] = receiver_email
-        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict = QueryDict(
+            mutable_data.urlencode(), mutable=True)
         mutable_data_querydict.update(mutable_data)
         serializer = MessageCreateSerializer(data=mutable_data_querydict)
 
@@ -254,11 +273,12 @@ class MessageView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class MessageDetailView(APIView):
     def get(self, request, message_id):
         """ 쪽지 상세보기 """
         message = get_object_or_404(Message, id=message_id)
-        
+
         if request.user.is_authenticated:
             user = request.user.email
         else:
@@ -278,7 +298,7 @@ class MessageDetailView(APIView):
         message = get_object_or_404(Message, id=message_id)
         message.delete()
         return Response({"message": "쪽지를 삭제했습니다."}, status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class MessageReplyView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -289,7 +309,8 @@ class MessageReplyView(generics.CreateAPIView):
         receiver = request.data.get('receiver')
         mutable_data = request.data.copy()
         mutable_data['receiver_email'] = receiver
-        mutable_data_querydict = QueryDict(mutable_data.urlencode(), mutable=True)
+        mutable_data_querydict = QueryDict(
+            mutable_data.urlencode(), mutable=True)
         mutable_data_querydict.update(mutable_data)
         serializer = MessageCreateSerializer(data=mutable_data_querydict)
 
@@ -308,103 +329,109 @@ class MessageReplyView(generics.CreateAPIView):
 
 # 소셜 로그인
 class KakaoLoginView(APIView):
-  def post(self, request):
-    serializer = KakaoLoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    code = serializer.validated_data["code"]
+    def post(self, request):
+        serializer = KakaoLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.validated_data["code"]
 
-    # 인증 코드를 사용하여 액세스 토큰을 얻기 위해 카카오 서버에 요청
-    access_token_response = requests.post(
-      "https://kauth.kakao.com/oauth/token", 
-      headers={"Content-Type": "application/x-www-form-urlencoded"},
-      data={
-        "grant_type": "authorization_code",
-        "client_id": os.environ.get("KAKAO_REST_API_KEY"),
-        "redirect_uri": "https://www.teamnuri.xyz/user/kakaocode.html", # 카카오에 등록된 리다이렉트 URI
-        "code": code,
-      },
-    )
+        # 인증 코드를 사용하여 액세스 토큰을 얻기 위해 카카오 서버에 요청
+        access_token_response = requests.post(
+            "https://kauth.kakao.com/oauth/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "grant_type": "authorization_code",
+                "client_id": os.environ.get("KAKAO_REST_API_KEY"),
+                "redirect_uri": "https://www.teamnuri.xyz/user/kakaocode.html",  # 카카오에 등록된 리다이렉트 URI
+                "code": code,
+            },
+        )
 
-    # 액세스 토큰을 가져옴
-    access_token_data = access_token_response.json()
-    access_token = access_token_data.get("access_token")
+        # 액세스 토큰을 가져옴
+        access_token_data = access_token_response.json()
+        access_token = access_token_data.get("access_token")
 
-    # 액세스 토큰을 사용하여 사용자 정보를 얻기 위해 카카오 서버에 요청
-    user_info_response = requests.get( 
-      "https://kapi.kakao.com/v2/user/me",
-      headers={
-        "Authorization": f"Bearer {access_token}",
-        "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
-      },
-    )
+        # 액세스 토큰을 사용하여 사용자 정보를 얻기 위해 카카오 서버에 요청
+        user_info_response = requests.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-type": "application/x-www-form-urlencoded;charset=utf-8",
+            },
+        )
 
-    # 사용자 정보를 가져옴
-    user_info_data = user_info_response.json()
-    kakao_account = user_info_data.get("kakao_account")
-    if kakao_account is not None:
-      kakao_email = kakao_account.get("email")
-    else:
-      return Response({"error": "kakao_account 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
-       
-    properties = user_info_data.get("properties")
-    if properties is not None:
-      kakao_nickname = properties.get("nickname")
-    else:
-      return Response({"error": "properties 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        # 사용자 정보를 가져옴
+        user_info_data = user_info_response.json()
+        kakao_account = user_info_data.get("kakao_account")
+        if kakao_account is not None:
+            kakao_email = kakao_account.get("email")
+        else:
+            return Response({"error": "kakao_account 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-    kakao_id = user_info_data.get("id")
+        properties = user_info_data.get("properties")
+        if properties is not None:
+            kakao_nickname = properties.get("nickname")
+        else:
+            return Response({"error": "properties 정보를 얻을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-      # 사용자 이메일을 사용하여 유저 필터링
-      user = User.objects.get(email=kakao_email)
-      social_user = SocialAccount.objects.filter(user=user).first()
+        kakao_id = user_info_data.get("id")
 
-      # 유저가 존재하고 소셜 로그인 사용자인 경우
-      if social_user:
-        # 카카오가 아닌 경우 에러 메시지
-        if social_user.provider != "kakao":
-          return Response({"error": "카카오로 가입한 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # 사용자 이메일을 사용하여 유저 필터링
+            user = User.objects.get(email=kakao_email)
+            social_user = SocialAccount.objects.filter(user=user).first()
 
-        # 유저를 활성화하고 저장
-        user.is_active = True
-        user.save()
+            # 유저가 존재하고 소셜 로그인 사용자인 경우
+            if social_user:
+                # 카카오가 아닌 경우 에러 메시지
+                if social_user.provider != "kakao":
+                    return Response({"error": "카카오로 가입한 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 토큰 생성 및 반환
-        token_serializer = UserTokenObtainPairSerializer()
-        tokens = token_serializer.for_user(user)
-        return Response(tokens, status=status.HTTP_200_OK)
+                # 유저를 활성화하고 저장
+                user.is_active = True
+                user.save()
 
-      # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
-      if social_user is None:
-        return Response({"error": "이메일이 존재하지만, 소셜 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
+                # 토큰 생성 및 반환
+                token_serializer = UserTokenObtainPairSerializer()
+                tokens = token_serializer.for_user(user)
+                return Response(tokens, status=status.HTTP_200_OK)
 
-    # 유저가 존재하지 않는 경우
-    except User.DoesNotExist:
-      # 신규 유저를 생성하고 비밀번호를 설정하지 않음
-      new_user = User.objects.create(nickname=kakao_nickname, email=kakao_email)
-      new_user.set_unusable_password()
-      new_user.is_active = True
-      new_user.save()
+            # 유저가 존재하지만 소셜 로그인 사용자가 아닌 경우 에러 메시지
+            if social_user is None:
+                return Response({"error": "이메일이 존재하지만, 소셜 유저가 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-      # 소셜 계정 생성
-      new_social_account, created = SocialAccount.objects.get_or_create(provider="kakao", uid=kakao_id, user=new_user)
-      if created:
-        # allauth의 SocialApp
-        social_app = SocialApp.objects.get(provider="kakao")
+        # 유저가 존재하지 않는 경우
+        except User.DoesNotExist:
+            # 신규 유저를 생성하고 비밀번호를 설정하지 않음
+            new_user = User.objects.create(
+                nickname=kakao_nickname, email=kakao_email)
+            new_user.set_unusable_password()
+            new_user.is_active = True
+            new_user.save()
 
-        # allauth의 SocialToken을 사용하여 토큰 생성
-        SocialToken.objects.create(app=social_app, account=new_social_account, token=access_token)
+            # 소셜 계정 생성
+            new_social_account, created = SocialAccount.objects.get_or_create(
+                provider="kakao", uid=kakao_id, user=new_user)
+            if created:
+                # allauth의 SocialApp
+                social_app = SocialApp.objects.get(provider="kakao")
 
-      # 신규 유저 생성
-      token_serializer = UserTokenObtainPairSerializer()
-      tokens = token_serializer.for_user(new_user)
-      return Response(tokens, status=status.HTTP_200_OK)
-     
-    return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
+                # allauth의 SocialToken을 사용하여 토큰 생성
+                SocialToken.objects.create(
+                    app=social_app, account=new_social_account, token=access_token)
+
+            # 신규 유저 생성
+            token_serializer = UserTokenObtainPairSerializer()
+            tokens = token_serializer.for_user(new_user)
+            return Response(tokens, status=status.HTTP_200_OK)
+
+        return Response({"error": "알 수 없는 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 # HOME
+
+
 class HomeUserPagination(LimitOffsetPagination):
     default_limit = 12
+
 
 class HomeUserListView(APIView):
     '''메인페이지 유저리스트 뷰'''
@@ -422,6 +449,8 @@ class HomeUserListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # 신고 알림
+
+
 class EmailThread(threading.Thread):
     def __init__(self, subject, message, to_email):
         self.subject = subject
@@ -438,7 +467,9 @@ class EmailThread(threading.Thread):
         )
         email.send()
 
-#신고
+# 신고
+
+
 class ReportView(APIView):
     def post(self, request, user_id):
         reporter = request.user
@@ -479,21 +510,24 @@ class ReportView(APIView):
             email.start()
 
             return Response('정지된 악질 유저입니다.', status=status.HTTP_200_OK)
-        
+
         return Response('신고가 접수되었습니다.', status=status.HTTP_200_OK)
-    
-    
+
+
 # 이메일 알림 동의
 class EmailNotificationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        email_notification = EmailNotificationSettings.objects.filter(user=request.user)
-        email_notification_serializer = EmailNotificationSerializer(email_notification, many=True)
+        email_notification = EmailNotificationSettings.objects.filter(
+            user=request.user)
+        email_notification_serializer = EmailNotificationSerializer(
+            email_notification, many=True)
         return Response(email_notification_serializer.data)
 
     def post(self, request):
-        email_notification_settings = get_object_or_404(EmailNotificationSettings, user=request.user)
+        email_notification_settings = get_object_or_404(
+            EmailNotificationSettings, user=request.user)
         email_notification_settings.email_notification = not email_notification_settings.email_notification
         email_notification_settings.save()
 
