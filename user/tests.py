@@ -3,6 +3,9 @@ from django.urls import reverse
 from user.models import User
 from django.core import mail
 import asyncio
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from base64 import urlsafe_b64encode
+from django.utils.encoding import force_bytes
 
 
 # 회원가입 TEST
@@ -94,4 +97,55 @@ class SignUpViewTest(APITestCase):
         asyncio.run(wait_for_email())
 
         self.assertEqual(len(mail.outbox), 1)
+
+
+# 이메일 인증 TEST
+class VerifyEmailViewTest(APITestCase):
+    def setUp(self):            
+        self.user = User.objects.create_user(email='test@test.test',
+                                             password='abc123qw!')
+    
+    '''이메일 인증 전 유저 비활성화 확인'''
+    def test_create_user_is_active_8(self):
+        self.assertFalse(self.user.is_active)
+
+    '''이메일 인증 성공'''
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend") # 이메일을 실제로 전송하지 않고 로컬 메모리에 저장하는 백엔드
+    def test_verify_email_9(self):        
+        user_id = urlsafe_b64encode(force_bytes(self.user.pk)).decode('utf-8')
+        token = PasswordResetTokenGenerator().make_token(self.user)
+
+        auth_url = f"https://nuriggun.xyz/user/verify-email/{user_id}/{token}/"
+
+        response = self.client.get(auth_url)
+        print(response)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://teamnuri.xyz/user/login.html")
         
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+
+    '''이메일 인증 유효하지 않는 토큰'''
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend") # 이메일을 실제로 전송하지 않고 로컬 메모리에 저장하는 백엔드
+    def test_verify_email_10(self):        
+        user_id = urlsafe_b64encode(force_bytes(self.user.pk)).decode('utf-8')
+        token = PasswordResetTokenGenerator().make_token(self.user)
+
+        auth_url1 = f"https://nuriggun.xyz/user/verify-email/no{user_id}/{token}/"
+
+        response = self.client.get(auth_url1)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://teamnuri.xyz/user/password_reset_failed.html")
+
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        
+        auth_url2 = f"https://nuriggun.xyz/user/verify-email/{user_id}/no{token}/"
+
+        response = self.client.get(auth_url2)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://teamnuri.xyz/user/password_reset_failed.html")
+
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
