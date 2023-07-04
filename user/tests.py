@@ -149,3 +149,91 @@ class VerifyEmailViewTest(APITestCase):
 
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+
+# 로그인 인증 TEST
+class LoginViewTest(APITestCase):
+    def setUp(self):            
+        self.user = User.objects.create_user(email='test@test.test', password='abc123qw!', is_active = True)
+
+    '''이메일 인증 X'''
+    def test_login_11(self):
+        self.user.is_active = False
+        self.user.save()
+
+        url = reverse("login_view")
+        data = {
+            "email" : "test@test.test",
+            "password": "abc123qw!"
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 401)
+
+    '''비밀번호 빈값'''
+    def test_login_12(self):
+        url = reverse("login_view")
+        data = {
+            "email" : "test@test.test",
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    '''비밀번호 다름'''
+    def test_login_13(self):
+        url = reverse("login_view")
+        data = {
+            "email" : "test@test.test",
+            "password": "123ABDqw!"
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 401)
+
+    '''이메일 빈값'''
+    def test_login_14(self):
+        url = reverse("login_view")
+        data = {
+            "password": "abc123qw!"
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    '''이메일 다름'''
+    def test_login_15(self):
+        url = reverse("login_view")
+        data = {
+            "email" : "test123@test.test",
+            "password": "abc123qw!"
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 401)
+
+    '''이메일/비밀번호 빈값'''
+    def test_login_16(self):
+        url = reverse("login_view")
+        data = {
+
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 400)
+    
+    '''로그인 성공!'''
+    def test_login_17(self):
+        url = reverse("login_view")
+        data = {
+            "email" : "test@test.test",
+            "password": "abc123qw!"
+        }
+        response = self.client.post(url, data)
+        print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+
+# 소셜 로그인
+class KakaoLoginViewTest(APITestCase):
+    pass
