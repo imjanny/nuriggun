@@ -6,12 +6,13 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
 from .models import Message
 import threading
-from django.core.mail import EmailMessage
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
 from rest_framework import exceptions
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 import re
 
 # 구독
@@ -60,26 +61,38 @@ class UserSerializer(serializers.ModelSerializer):
 # 이메일 비동기전송  
 class Util:
     @staticmethod
-    def send_email(message):
-        email = EmailMessage(
-            subject = message["subject"],
-            body = message["message"],
-            to = [message["to_email"]],
+    def send_email(data, template_name):
+        '''이메일 기본'''
+        email = EmailMultiAlternatives(
+            subject = data['subject'],
+            body = data['message'],
+            to = [data['to_email']],
         )
+        html_content = render_to_string(template_name, {'auth_url': data['auth_url']})
+        email.attach_alternative(html_content, "text/html")
         EmailThread(email).start()
 
     @staticmethod
-    def send_password_reset_email(user, reset_url):
-        subject = "[Nurriggun]비밀번호 재설정 인증 링크입니다."
-        message = f"비밀번호 재설정 링크: {reset_url}"
-        to_email = user.email
-
-        reset_message = {
-            "subject": subject,
-            "message": message,
-            "to_email": to_email, 
+    def send_signup_email(user, auth_url):
+        '''회원가입 이메일'''
+        signup_message = {
+            "subject": "[Nurriggun]회원가입 인증 이메일입니다.",
+            "message": f"회원가입 인증 링크: {auth_url}",
+            "to_email": user.email, 
+            "auth_url": auth_url,
         }
-        Util.send_email(reset_message)
+        Util.send_email(signup_message, 'email_template.html')
+
+    @staticmethod
+    def send_password_reset_email(user, reset_url):
+        '''비밀번호 재설정 이메일'''
+        reset_message = {
+            "subject": "[Nurriggun]비밀번호 재설정 이메일입니다.",
+            "message": f"비밀번호 재설정 링크: {reset_url}",
+            "to_email": user.email, 
+            "auth_url": reset_url,
+        }
+        Util.send_email(reset_message, 'password_reset_template.html')
 
 class EmailThread(threading.Thread):
     '''비동기전송 : 회원가입 시 이메일전송으로 인한 지연현상이 없어짐'''
@@ -89,7 +102,6 @@ class EmailThread(threading.Thread):
 
     def run(self):
         self.email.send()
-
 
 # 회원가입(이메일인증)  
 class UserCreateSerializer(serializers.ModelSerializer):

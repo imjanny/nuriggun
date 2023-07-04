@@ -121,16 +121,9 @@ class SignUpView(APIView):
             user_id = urlsafe_b64encode(force_bytes(user.pk)).decode('utf-8')
             token = PasswordResetTokenGenerator().make_token(user)
 
-            email = user.email
             auth_url = f"https://nuriggun.xyz/user/verify-email/{user_id}/{token}/"
 
-            email_body = "이메일 인증" + auth_url
-            message = {
-                "subject": "[Nurriggun] 회원가입 인증 이메일입니다.",
-                "message": email_body,
-                "to_email": email,
-            }
-            Util.send_email(message)
+            Util.send_signup_email(user, auth_url)
 
             return Response({"message": "가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
         else:
