@@ -1,6 +1,8 @@
 from django.urls import path, include
 from article import views
 
+
+
 urlpatterns = [
 
     path("home/", views.HomeView.as_view(), name="home_view"),

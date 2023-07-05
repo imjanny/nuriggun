@@ -49,8 +49,8 @@ class Article(models.Model):
     
 #------------------------- 테스트 코드 함수 -------------------------
     
-    def get_absolute_url(self):
-        return reverse("article_detail_view", kwargs={"article_id": self.pk})
+    # def get_absolute_url(self):
+    #     return reverse("article_detail_view", kwargs={"article_id": self.pk})
 
     def __str__(self):
         return str(self.title)
