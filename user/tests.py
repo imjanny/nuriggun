@@ -431,3 +431,106 @@ class PasswordResetViewTest(APITestCase):
 
         # # self.assertEqual(response.status_code, 404)
         # self.assertEqual(response.url, "https://teamnuri.xyz/index.html")
+
+
+# 비밀번호 변경 TEST
+class PasswordChangeViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!')
+        self.client.force_authenticate(user=self.user)
+
+        self.user_1 = User.objects.create_user(
+            email='test2@test.test', password='abc123qw1!')
+
+    def test_password_change_31(self):
+        '''로그인X'''
+        self.client.force_authenticate(user=None)  # 인증 해제
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        response = self.client.put(url)
+        # print(response.data)
+        self.assertEqual(response.status_code, 401)
+
+    def test_password_change_32(self):
+        '''다른 user_id의 비밀번호 변경 진행'''
+        user_id = self.user_1.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        response = self.client.put(url)
+        # print(response.data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_password_change_33(self):
+        '''없는 user_id의 비밀번호 변경 진행'''
+        user_id = 999
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        response = self.client.put(url)
+        # print(response.data)
+        self.assertEqual(response.status_code, 404)
+
+    def test_password_change_34(self):
+        '''data 빈값'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {}
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_change_35(self):
+        '''비밀번호 확인 빈값'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {
+            "password": "asdf@dsg453"
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_change_36(self):
+        '''비밀번호 빈값'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {
+            "password2": "asdf@dsg453"
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_change_37(self):
+        '''비밀번호/비밀번호 확인 다름'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {
+            "password": "asdf@dsg453",
+            "password2": "1234asdf@dsg453"
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_change_38(self):
+        '''비밀번호 유효성 검사'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {
+            "password": "1234",
+            "password2": "1234"
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_change_39(self):
+        '''비밀번호 변경 성공!'''
+        user_id = self.user.id
+        url = reverse("password_change_view", kwargs={"user_id": user_id})
+        data = {
+            "password": "1234asdf@dsg453",
+            "password2": "1234asdf@dsg453"
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 200)
