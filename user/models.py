@@ -46,7 +46,7 @@ class User(AbstractBaseUser):
     profile_img = models.ImageField("프로필 이미지", blank=True, upload_to="profile/%Y/%m/")
     subscribe = models.ManyToManyField("self", symmetrical=False, related_name="subscribes", blank=True)
     is_admin = models.BooleanField("관리자",default=False)
-    is_active = models.BooleanField("활성화",default=True)
+    is_active = models.BooleanField("활성화",default=False)
     is_staff = models.BooleanField("스태프",default=False)
     created_at = models.DateTimeField("생성일",auto_now_add=True)
     updated_at = models.DateTimeField("수정일",auto_now=True)
