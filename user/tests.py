@@ -14,7 +14,7 @@ class SignUpViewTest(APITestCase):
         '''회원가입 : 이메일 중복 확인을 위한 유저 생성'''
         self.user = User.objects.create_user(
             email='testgo@test.test', password='G1843514dadg23@')
-        
+
     def test_signup_1(self):
         '''회원가입 : 비밀번호 유효성 검사'''
         url = reverse("sign_up_view")
@@ -231,11 +231,12 @@ class PasswordResetViewTest(APITestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.url, f"https://teamnuri.xyz/user/password_reset_failed.html")
-        
+
     def test_password_reset_token_check_34(self):
         '''비밀번호 재설정 토큰 확인 : 유효하지 않는 user_id'''
         invalid_user_id = urlsafe_b64encode(force_bytes(6)).decode('utf-8')
-        url = reverse("password_reset_confirm", args=(invalid_user_id, self.token))
+        url = reverse("password_reset_confirm",
+                      args=(invalid_user_id, self.token))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
@@ -427,7 +428,7 @@ class UserViewTest(APITestCase):
         url = reverse("profile_view", kwargs={"user_id": user_id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-    
+
         # 다른 유저의 프로필
         user_id = self.user_1.id
         url = reverse("profile_view", kwargs={"user_id": user_id})
@@ -494,3 +495,65 @@ class UserViewTest(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.user.is_active)
+
+
+# 구독 TEST
+class SubscribeViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!', is_active=True)
+        self.client.force_authenticate(user=self.user)
+
+        self.user_1 = User.objects.create_user(
+            email='test2@test.test', password='abc123qw1!', is_active=True)
+        self.user_2 = User.objects.create_user(
+            email='test3@test.test', password='abc123qw1!', is_active=True)
+        self.user_3 = User.objects.create_user(
+            email='test4@test.test', password='abc123qw1!', is_active=True)
+        self.user_4 = User.objects.create_user(
+            email='test5@test.test', password='abc123qw1!', is_active=True)
+
+        self.user.subscribe.add(self.user_1, self.user_3)  # self.user 구독한 유저
+        self.user_3.subscribe.add(self.user, self.user_2)  # self.user_3 구독한 유저
+
+    def test_subscribe_list_70(self):
+        '''구독 리스트 : 로그인 x'''
+        self.client.force_authenticate(user=None)
+        user_id = self.user_3.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_subscribe_71(self):
+        '''구독 등록/취소 : 로그인 x'''
+        self.client.force_authenticate(user=None)
+        user_id = self.user.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_subscribe_72(self):
+        '''구독 등록/취소 : 자신 구독 진행'''
+        user_id = self.user.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_subscribe_73(self):
+        '''구독 등록/취소 : (처음 구독 진행)알림 설정 생성 + 구독 등록 / + 구독 등록'''
+        user_id = self.user_2.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 202)
+
+        user_id = self.user_4.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_subscribe_74(self):
+        '''구독 등록/취소 : 구독 취소!'''
+        user_id = self.user_3.id
+        url = reverse("subscribe_view", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 205)
