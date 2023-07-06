@@ -1,6 +1,6 @@
-from rest_framework.test import APITestCase, override_settings
+from rest_framework.test import APITestCase
 from django.urls import reverse
-from user.models import User
+from user.models import User, EmailNotificationSettings
 from django.core import mail
 import asyncio
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -624,3 +624,43 @@ class ReportViewTest(APITestCase):
 
         self.user_3.refresh_from_db()
         self.assertFalse(self.user_3.is_active)
+
+
+# 이메일 알림 동의 TEST
+class EmailNotificationViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!')
+        self.client.force_authenticate(user=self.user)
+        self.user = EmailNotificationSettings.objects.create(user=self.user)
+
+    def test_email_notifications_90(self):
+        '''이메일 알림 동의 확인 : 로그인x'''
+        self.client.force_authenticate(user=None)
+        url = reverse("email_notification")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_email_notifications_91(self):
+        '''이메일 알림 동의 확인 : 성공!'''
+        url = reverse("email_notification")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_email_notifications_settings_92(self):
+        '''이메일 알림 동의 설정 : 로그인 x'''
+        self.client.force_authenticate(user=None)
+        url = reverse("email_notification")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_email_notifications_settings_93(self):
+        '''이메일 알림 동의 설정 : 알림 동의 + 취소'''
+        url = reverse("email_notification")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+
+        # 알림 취소
+        url = reverse("email_notification")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 205)
