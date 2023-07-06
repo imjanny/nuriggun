@@ -557,3 +557,70 @@ class SubscribeViewTest(APITestCase):
         url = reverse("subscribe_view", kwargs={"user_id": user_id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 205)
+
+
+# 신고 TEST
+class ReportViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!', is_active=True)
+        self.client.force_authenticate(user=self.user)
+
+        self.user_1 = User.objects.create_user(
+            email='test2@test.test', password='abc123qw1!', is_active=True)
+        self.user_2 = User.objects.create_user(
+            email='test3@test.test', password='abc123qw1!', is_active=True, report_count=1)
+        self.user_3 = User.objects.create_user(
+            email='test4@test.test', password='abc123qw1!', is_active=True, report_count=2)
+
+    def test_report_80(self):
+        '''신고 : 자기 자신 신고'''
+        user_id = self.user.id
+        url = reverse("report_user", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_report_81(self):
+        '''신고 : 성공!'''
+        user_id = self.user_1.id
+        url = reverse("report_user", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.user_2.refresh_from_db()
+        self.assertTrue(self.user_1.is_active)
+
+        # 같은 유저 한번 더 신고
+        user_id = self.user_1.id
+        url = reverse("report_user", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 400)
+
+    def test_report_82(self):
+        '''신고 : 성공! (+정지 이메일 확인)'''
+        user_id = self.user_2.id
+        url = reverse("report_user", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.user_2.refresh_from_db()
+        self.assertFalse(self.user_2.is_active)
+
+        # 이메일 전송 확인(비동기 전송으로 시간 연장 추가)
+        async def wait_for_email():
+            while len(mail.outbox) < 1:
+                await asyncio.sleep(0.1)
+
+        asyncio.run(wait_for_email())
+
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_report_83(self):
+        '''신고 : 이미 정지된 유저'''
+        user_id = self.user_3.id
+        url = reverse("report_user", kwargs={"user_id": user_id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.user_3.refresh_from_db()
+        self.assertFalse(self.user_3.is_active)
