@@ -76,19 +76,16 @@ class VerifyEmailViewTest(APITestCase):
             force_bytes(self.user.pk)).decode('utf-8')
         self.token = PasswordResetTokenGenerator().make_token(self.user)
 
-    def test_create_user_is_active_8(self):
-        '''이메일 인증 전 유저 비활성화 확인'''
+    def test_create_user_is_active_10(self):
+        '''이메일 인증 : 인증 전 유저 비활성화 확인'''
         self.assertFalse(self.user.is_active)
 
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_verify_email_9(self):
-        '''이메일 인증 : 유효하지 않는 토큰 값 -> 비활성화'''
+    def test_verify_email_11(self):
+        '''이메일 인증 : 유효하지 않는 토큰 값'''
         invalid_token = self.token + 'invalid'
-
         auth_url = f"https://nuriggun.xyz/user/verify-email/{self.user_id}/{invalid_token}/"
 
         response = self.client.get(auth_url)
-        # print(response)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.url, "https://teamnuri.xyz/user/password_reset_failed.html")
@@ -96,15 +93,12 @@ class VerifyEmailViewTest(APITestCase):
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
 
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_verify_email_10(self):
-        '''이메일 인증 : 유효하지 않는 user_id -> 비활성화'''
+    def test_verify_email_12(self):
+        '''이메일 인증 : 유효하지 않는 user_id'''
         invalid_user_id = urlsafe_b64encode(force_bytes(6)).decode('utf-8')
-
         auth_url = f"https://nuriggun.xyz/user/verify-email/{invalid_user_id}/{self.token}/"
 
         response = self.client.get(auth_url)
-        # print(response)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.url, "https://teamnuri.xyz/user/password_reset_failed.html")
@@ -112,14 +106,11 @@ class VerifyEmailViewTest(APITestCase):
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
 
-    # 이메일을 실제로 전송하지 않고 로컬 메모리에 저장하는 백엔드
-    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_verify_email_11(self):
+    def test_verify_email_13(self):
         '''이메일 인증 : 성공! 활성화 확인!'''
         auth_url = f"https://nuriggun.xyz/user/verify-email/{self.user_id}/{self.token}/"
 
         response = self.client.get(auth_url)
-        # print(response)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://teamnuri.xyz/user/login.html")
 
