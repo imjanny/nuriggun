@@ -245,3 +245,189 @@ class LoginViewTest(APITestCase):
 # 소셜 로그인
 class KakaoLoginViewTest(APITestCase):
     pass
+
+
+# 비밀번호 재설정 TEST
+class PasswordResetViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!')
+        self.user_id = urlsafe_b64encode(
+            force_bytes(self.user.pk)).decode('utf-8')
+        self.token = PasswordResetTokenGenerator().make_token(self.user)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_password_reset_email_send_19(self):
+        '''이메일 전송 : 잘못된 이메일'''
+        url = reverse("rest_password_reset_view")
+        data = {
+            "email": "test12@test.test"
+        }
+        response = self.client.post(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_password_reset_email_send_20(self):
+        '''이메일 전송 : 이메일 빈값'''
+        url = reverse("rest_password_reset_view")
+        data = {}
+        response = self.client.post(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_password_reset_email_send_21(self):
+        '''이메일 전송 : 이메일 전송 성공!'''
+        url = reverse("rest_password_reset_view")
+        data = {
+            "email": "test@test.test"
+        }
+        response = self.client.post(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+        async def wait_for_email():
+            while len(mail.outbox) < 1:
+                await asyncio.sleep(0.1)
+
+        asyncio.run(wait_for_email())
+
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_password_reset_token_check_22(self):
+        '''재설정 토큰 확인 : 유효하지 않는 토큰 값'''
+        invalid_token = self.token + 'invalid'
+        url = reverse("password_reset_confirm",
+                      args=(self.user_id, invalid_token))
+        response = self.client.get(url)
+        # print(response)
+        self.assertEqual(
+            response.url, f"https://teamnuri.xyz/user/password_reset_failed.html")
+        self.assertEqual(response.status_code, 302)
+
+    def test_password_reset_token_check_23(self):
+        '''재설정 토큰 확인 : 유효하지 않는 user_id ★★★★★ 재확인'''
+        # invalid_user_id = urlsafe_b64encode(force_bytes(6)).decode('utf-8')
+        # url = reverse("password_reset_confirm", args=(invalid_user_id, self.token))
+        # response = self.client.get(url)
+        # print(response)
+        # self.assertEqual(response.url, f"https://teamnuri.xyz/user/password_reset_failed.html")
+        # self.assertEqual(response.status_code, 404)
+
+    def test_password_reset_token_check_24(self):
+        '''재설정 토큰 확인 : 성공!'''
+        url = reverse("password_reset_confirm",
+                      args=(self.user_id, self.token))
+        response = self.client.get(url)
+        # print(response)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url, f"https://teamnuri.xyz/user/password_reset_confirm.html?id={self.user_id}&token={self.token}")
+
+    def test_password_reset_confirm_25(self):
+        '''재설정 진행 : 비밀번호 다름'''
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$nad",
+            "password2": "qEadg423$#hbnad",
+            "token": self.token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_reset_confirm_26(self):
+        '''재설정 진행 : 비밀번호 유효성 실패'''
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "1234",
+            "password2": "1234",
+            "token": self.token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_reset_confirm_27(self):
+        '''재설정 진행 : 비밀번호 빈값'''
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$#hbnad",
+            "token": self.token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_reset_confirm_28(self):
+        '''재설정 진행 : 유효하지 않는 토큰 값'''
+        invalid_token = self.token + 'invalid'
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$#hbnad",
+            "password2": "qEadg423$#hbnad",
+            "token": invalid_token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 401)
+
+    def test_password_reset_confirm_29(self):
+        '''재설정 진행 : 유효하지 않는 uidb64 값'''
+        invalid_user_id = urlsafe_b64encode(force_bytes(21)).decode('utf-8')
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$#hbnad",
+            "password2": "qEadg423$#hbnad",
+            "token": self.token,
+            "uidb64": invalid_user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_password_reset_confirm_30(self):
+        '''재설정 진행 : 성공!'''
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$#hbnad",
+            "password2": "qEadg423$#hbnad",
+            "token": self.token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+    def test_password_reset_confirm_30(self):
+        '''재설정 후 링크 클릭'''
+        url = reverse("password_reset_confirm_view")
+        data = {
+            "password": "qEadg423$#hbnad",
+            "password2": "qEadg423$#hbnad",
+            "token": self.token,
+            "uidb64": self.user_id
+        }
+        response = self.client.put(url, data)
+        # print(response.data)
+        self.assertEqual(response.status_code, 200)
+
+        url = reverse("password_reset_confirm",
+                      args=(self.user_id, self.token))
+        response = self.client.get(url)
+        # print(response.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url, "https://teamnuri.xyz/user/password_reset_failed.html")
+
+        # redirected_url = response.url
+        # response = self.client.get(redirected_url)
+        # print(response)
+
+        # # self.assertEqual(response.status_code, 404)
+        # self.assertEqual(response.url, "https://teamnuri.xyz/index.html")
