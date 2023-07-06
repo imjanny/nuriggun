@@ -401,3 +401,96 @@ class PasswordChangeViewTest(APITestCase):
         }
         response = self.client.put(url, data)
         self.assertEqual(response.status_code, 200)
+
+
+# 프로필 TEST
+class UserViewTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@test.test', password='abc123qw!')
+        self.client.force_authenticate(user=self.user)
+
+        self.user_1 = User.objects.create_user(
+            email='test2@test.test', password='abc123qw1!')
+
+    def test_profile_detail_60(self):
+        '''프로필 보기 : 로그인X'''
+        self.client.force_authenticate(user=None)  # 인증 해제
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_profile_detail_61(self):
+        '''프로필 보기 : 내 프로필(+다른 유저의 프로필)'''
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+    
+        # 다른 유저의 프로필
+        user_id = self.user_1.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_profile_detail_62(self):
+        '''프로필 보기 : 없는 유저의 프로필'''
+        user_id = 100
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_profile_update_63(self):
+        '''프로필 수정 : 로그인x'''
+        self.client.force_authenticate(user=None)
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_profile_update_64(self):
+        '''프로필 수정 : 다른 유저의 프로필'''
+        user_id = self.user_1.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_profile_update_65(self):
+        '''프로필 수정 : 내 프로필 -> 잘못 된 값'''
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        data = {
+            "nickname": "hello world",
+            "interest": "food",
+            "email": "update@test.test",
+            "emotion": "fun"
+        }
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_profile_update_66(self):
+        '''프로필 수정 : 완료!'''
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        data = {
+            "nickname": "hello",
+            "interest": "날씨"
+        }
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, 200)
+
+    def test_profile_delete_67(self):
+        '''프로필 삭제(회원 탈퇴) : 다른 유저의 프로필'''
+        user_id = self.user_1.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 400)
+
+    def test_profile_delete_68(self):
+        '''프로필 삭제(회원 탈퇴) : 완료!'''
+        user_id = self.user.id
+        url = reverse("profile_view", kwargs={"user_id": user_id})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.user.is_active)
