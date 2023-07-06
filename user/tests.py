@@ -339,76 +339,49 @@ class PasswordChangeViewTest(APITestCase):
         self.user_1 = User.objects.create_user(
             email='test2@test.test', password='abc123qw1!')
 
-    def test_password_change_31(self):
-        '''로그인X'''
+    def test_password_change_50(self):
+        '''비밀번호 변경 : 로그인X'''
         self.client.force_authenticate(user=None)  # 인증 해제
         user_id = self.user.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         response = self.client.put(url)
-        # print(response.data)
         self.assertEqual(response.status_code, 401)
 
-    def test_password_change_32(self):
-        '''다른 user_id의 비밀번호 변경 진행'''
+    def test_password_change_51(self):
+        '''비밀번호 변경 : 다른 user_id의 비밀번호 변경 진행'''
         user_id = self.user_1.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         response = self.client.put(url)
-        # print(response.data)
         self.assertEqual(response.status_code, 403)
 
-    def test_password_change_33(self):
-        '''없는 user_id의 비밀번호 변경 진행'''
+    def test_password_change_52(self):
+        '''비밀번호 변경 : 없는 user_id의 비밀번호 변경 진행'''
         user_id = 999
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         response = self.client.put(url)
-        # print(response.data)
         self.assertEqual(response.status_code, 404)
 
-    def test_password_change_34(self):
-        '''data 빈값'''
+    def test_password_change_53(self):
+        '''비밀번호 변경 : data 빈값'''
         user_id = self.user.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         data = {}
         response = self.client.put(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-    def test_password_change_35(self):
-        '''비밀번호 확인 빈값'''
+    def test_password_change_54(self):
+        '''비밀번호 변경 : 비밀번호/비밀번호 확인 다름'''
         user_id = self.user.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         data = {
-            "password": "asdf@dsg453"
-        }
-        response = self.client.put(url, data)
-        # print(response.data)
-        self.assertEqual(response.status_code, 400)
-
-    def test_password_change_36(self):
-        '''비밀번호 빈값'''
-        user_id = self.user.id
-        url = reverse("password_change_view", kwargs={"user_id": user_id})
-        data = {
-            "password2": "asdf@dsg453"
-        }
-        response = self.client.put(url, data)
-        # print(response.data)
-        self.assertEqual(response.status_code, 400)
-
-    def test_password_change_37(self):
-        '''비밀번호/비밀번호 확인 다름'''
-        user_id = self.user.id
-        url = reverse("password_change_view", kwargs={"user_id": user_id})
-        data = {
-            "password": "asdf@dsg453",
+            "password": "1234",
             "password2": "1234asdf@dsg453"
         }
         response = self.client.put(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-    def test_password_change_38(self):
-        '''비밀번호 유효성 검사'''
+    def test_password_change_55(self):
+        '''비밀번호 변경 : 비밀번호 유효성 검사'''
         user_id = self.user.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         data = {
@@ -416,11 +389,10 @@ class PasswordChangeViewTest(APITestCase):
             "password2": "1234"
         }
         response = self.client.put(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-    def test_password_change_39(self):
-        '''비밀번호 변경 성공!'''
+    def test_password_change_56(self):
+        '''비밀번호 변경 : 비밀번호 변경 성공!'''
         user_id = self.user.id
         url = reverse("password_change_view", kwargs={"user_id": user_id})
         data = {
@@ -428,5 +400,4 @@ class PasswordChangeViewTest(APITestCase):
             "password2": "1234asdf@dsg453"
         }
         response = self.client.put(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 200)
