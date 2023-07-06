@@ -664,3 +664,18 @@ class EmailNotificationViewTest(APITestCase):
         url = reverse("email_notification")
         response = self.client.post(url)
         self.assertEqual(response.status_code, 205)
+
+
+# 소셜 로그인
+# class KakaoLoginViewTest(APITestCase):
+#     pass
+
+
+# # 쪽지 TEST
+# class SignupViewTest(APITestCase):
+#     pass
+
+
+# # 홈 뷰 TEST
+# class HomeUserListViewTest(APITestCase):
+#     pass
