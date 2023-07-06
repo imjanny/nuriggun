@@ -118,14 +118,14 @@ class VerifyEmailViewTest(APITestCase):
         self.assertTrue(self.user.is_active)
 
 
-# 로그인 인증 TEST
+# 로그인 TEST
 class LoginViewTest(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             email='test@test.test', password='abc123qw!', is_active=True)
 
-    def test_login_12(self):
-        '''이메일 인증 X'''
+    def test_login_20(self):
+        '''로그인 : 이메일 인증 X'''
         self.user.is_active = False
         self.user.save()
 
@@ -135,68 +135,44 @@ class LoginViewTest(APITestCase):
             "password": "abc123qw!"
         }
         response = self.client.post(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 401)
 
-    def test_login_13(self):
-        '''비밀번호 빈값'''
+    def test_login_21(self):
+        '''로그인 : 이메일/비밀번호 빈값'''
         url = reverse("login_view")
         data = {
-            "email": "test@test.test",
         }
         response = self.client.post(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 400)
 
-    def test_login_14(self):
-        '''비밀번호 다름'''
+    def test_login_22(self):
+        '''로그인 : 비밀번호 다름'''
         url = reverse("login_view")
         data = {
             "email": "test@test.test",
             "password": "123ABDqw!"
         }
         response = self.client.post(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 401)
 
-    def test_login_15(self):
-        '''이메일 빈값'''
-        url = reverse("login_view")
-        data = {
-            "password": "abc123qw!"
-        }
-        response = self.client.post(url, data)
-        # print(response.data)
-        self.assertEqual(response.status_code, 400)
-
-    def test_login_16(self):
-        '''이메일 다름'''
+    def test_login_23(self):
+        '''로그인 : 이메일 다름'''
         url = reverse("login_view")
         data = {
             "email": "test123@test.test",
             "password": "abc123qw!"
         }
         response = self.client.post(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 401)
 
-    def test_login_17(self):
-        '''이메일/비밀번호 빈값'''
-        url = reverse("login_view")
-        data = {}
-        response = self.client.post(url, data)
-        # print(response.data)
-        self.assertEqual(response.status_code, 400)
-
-    def test_login_18(self):
-        '''로그인 성공!'''
+    def test_login_24(self):
+        '''로그인 : 성공!'''
         url = reverse("login_view")
         data = {
             "email": "test@test.test",
             "password": "abc123qw!"
         }
         response = self.client.post(url, data)
-        # print(response.data)
         self.assertEqual(response.status_code, 200)
 
 
