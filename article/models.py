@@ -10,7 +10,7 @@ class Article(models.Model):
         db_table = "Article"
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
-    title = models.CharField(max_length=50, verbose_name="제목")
+    title = models.CharField(max_length=50, verbose_name="제목" )
     content = models.TextField(max_length=1650, verbose_name="내용")
     image = models.ImageField(verbose_name="게시글 이미지")
     image_content = models.TextField(verbose_name="사진 설명", null=True, blank=True, default='')
@@ -49,8 +49,8 @@ class Article(models.Model):
     
 #------------------------- 테스트 코드 함수 -------------------------
     
-    def get_absolute_url(self):
-        return reverse("article_detail_view", kwargs={"article_id": self.pk})
+    # def get_absolute_url(self):
+    #     return reverse("article_detail_view", kwargs={"article_id": self.pk})
 
     def __str__(self):
         return str(self.title)

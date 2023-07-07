@@ -106,7 +106,7 @@ def save_weather():
         
     serializer = WeatherDataSerializer(weather_data_instance)
     return JsonResponse(serializer.data, safe=False)
-  
+        
 def delete_weather():
     '''어제 혹은 어제보다 이전 날씨 데이터 삭제'''
     today = timezone.localtime(timezone.now())
@@ -115,8 +115,8 @@ def delete_weather():
 
 def cron_weather():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(delete_weather, 'cron', hour='10', id='cron_delete_weather')
-    scheduler.add_job(save_weather, 'cron', hour='8,10,12,14,16,18,20,22', id='cron_save_weather')
+    scheduler.add_job(delete_weather, 'cron', hour='9',id='cron_delete_weather')
+    scheduler.add_job(save_weather, 'cron', hour='0,2,4,6,8,10,12,13,14,16,18,20,22', id='cron_save_weather')
     scheduler.start()
 
 cron_weather()

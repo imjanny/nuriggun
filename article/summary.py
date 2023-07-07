@@ -25,7 +25,7 @@ def summary(content):
         queryset = Article.objects.all()
         if queryset.exists():
             summary_content = queryset.order_by("-id").first()
-        response = openai.Completion.create(
+            response = openai.Completion.create(
             engine='text-davinci-003',
             prompt="Summarize the content in Korean, but keep it simple so that it does not exceed max_tokens=500. No greetings or reporter information is required."+content,
             max_tokens=500,
@@ -34,7 +34,7 @@ def summary(content):
             stop=None,
         )
 
-        answer = response.choices[0].text.strip()
+            answer = response.choices[0].text.strip()
 
-        summary_content.summary = answer
-        summary_content.save()
+            summary_content.summary = answer
+            summary_content.save()

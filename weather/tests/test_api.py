@@ -1,8 +1,6 @@
 from django.test import TestCase
-from weather.models import WeatherCity
+from weather.models import WeatherCity, WeatherData
 from weather.views import load_weather, save_weather
-import unittest
-import datetime
 
 class WeatherTestCase(TestCase):
     def setUp(self):
@@ -19,18 +17,12 @@ class WeatherTestCase(TestCase):
         self.assertIn('sky', weather_data)
         self.assertIn('rain', weather_data)
 
-        print("날씨데이터 get")
-
     def test_save_weather(self):
 
         save_weather()  
-
-        print("날씨데이터 저장완료!")
-
-
-if __name__ == '__main__':
-    unittest.main()
-
-
-
+        seoul_weather = WeatherData.objects.filter(city__city="Seoul").latest('timestamp')
+        self.assertIsNotNone(seoul_weather.temp) 
+        self.assertIsNotNone(seoul_weather.humidity) 
+        self.assertIsNotNone(seoul_weather.rain) 
+        self.assertIsNotNone(seoul_weather.sky)
 
