@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase,APIClient,force_authenticate,APIRequestFactory
 from django.test import TestCase,RequestFactory
 from rest_framework import status
-from .models import Article,Comment,CommentReaction
+from .models import Article,Comment,CommentReaction, ArticleReaction
 from .views import HomeView
 from user.models import User
 from django.test.client import MULTIPART_CONTENT, encode_multipart, BOUNDARY
@@ -11,6 +11,8 @@ import tempfile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from faker import Faker
 from .serializers import ArticleSerializer
+from django.utils import timezone
+from datetime import timedelta
 
 
 
@@ -581,4 +583,85 @@ class ArticleSearchViewTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         for data in response.data:
             self.assertEqual(data["title"], "test Title")  
-   
+
+# HomeView 테스트
+class HomeViewTest(APITestCase):
+    '''홈-게시글 테스트'''
+    def setUp(self):
+        self.client = APIClient()
+
+        self.user = User.objects.create_user(
+        email='test@test.test', 
+        password='abc123qw!', 
+        is_active=True
+        )
+        for i in range(12):
+            '''하루에 한 게시글 생성'''
+            time = timezone.now() - timedelta(days=i)
+            article = Article.objects.create(
+                user=self.user, 
+                title=f'{i}번 게시글', 
+                content=f'{i}번 내용',
+                created_at=time
+            )
+            for j in range(i):
+                '''댓글 수 = 게시글 번호'''
+                Comment.objects.create(
+                    user=self.user,
+                    article=article,
+                    comment=f'{j}번 댓글'
+                )
+        
+        '''Reaction_Count = 1 == 베스트 게시글'''
+        best_article = Article.objects.create(
+            user=self.user,
+            title='베스트 게시글 제목',
+            content='베스트 게시글 내용',
+            created_at=timezone.now()
+        )
+        ArticleReaction.objects.create(
+            user=self.user,
+            article=best_article,
+            great=True
+        )
+
+    def test_home_view_main(self):
+        '''메인 게시글 (댓글 순) 성공'''
+        url = reverse('home_view') + '?order=main'
+        response = self.client.get(url)
+        articles = response.data['results']
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(articles), 4)
+
+        comment_counts = [article['comments_count'] for article in articles]
+        self.assertEqual(comment_counts, sorted(comment_counts, reverse=True))
+    
+    def test_home_view_sub(self):
+        '''서브 게시글 (최신 순) 성공'''
+        url = reverse('home_view') + '?order=sub'
+        response = self.client.get(url)
+        articles = response.data['results']
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(articles), 4)
+
+        created_dates = [article['created_at'] for article in articles]
+        self.assertEqual(created_dates, sorted(created_dates, reverse=True))
+
+    def test_home_view_best(self):
+        '''베스트 게시글 (reaction_count가 가장 많은 1개) 성공'''
+        url = reverse('home_view') + '?order=best'
+        response = self.client.get(url)
+        articles = response.data['results']
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]['id'], 13)
+
+    def test_home_view_no_ordering(self):
+        '''기타 게시글 성공'''
+        url = reverse('home_view')
+        response = self.client.get(url)
+        articles = response.data['results']
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(articles), 4)
+
+            
