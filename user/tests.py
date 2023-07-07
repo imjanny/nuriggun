@@ -676,6 +676,20 @@ class EmailNotificationViewTest(APITestCase):
 #     pass
 
 
-# # 홈 뷰 TEST
-# class HomeUserListViewTest(APITestCase):
-#     pass
+# 홈 뷰 TEST
+class HomeUserListViewTest(APITestCase):
+    '''홈-유저리스트 테스트'''
+    def setUp(self):
+        for i in range(15):
+            User.objects.create_user(
+                email=f'test{i}@test.test', 
+                password=f'abc123qw{i}!', 
+                is_active=True
+        )
+        
+    def test_home_userlist_view(self):
+        '''12명 get 성공'''
+        url = reverse('home_user_list_view')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 12)
