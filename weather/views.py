@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 from django.utils import timezone
 from apscheduler.schedulers.background import BackgroundScheduler
+import requests
+import time
 
 MAX_RETRIES = 3
 
@@ -69,9 +71,18 @@ def load_weather(nx, ny):
 
             return weather_data
     
+        except requests.exceptions.RequestException as e:
+            print(f"요청 중 에러 발생 : {e}")
+
         except ValueError:
             print(f"데이터를 불러오지 못함 nx={nx}, ny={ny} \n응답 : {res.text}")
-            retry_count += 1
+
+        except Exception as e:
+            print(f"알 수 없는 에러 발생: {e}")
+        
+        print(f"에러 발생. {retry_count+1} 번째 재시도합니다.")
+        time.sleep(2)  
+        retry_count += 1
 
     print(f"최대 재시도 횟수를 초과했습니다. nx={nx}, ny={ny}")
     return None
@@ -115,8 +126,8 @@ def delete_weather():
 
 def cron_weather():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(delete_weather, 'cron', hour='9',id='cron_delete_weather')
-    scheduler.add_job(save_weather, 'cron', hour='0,2,4,6,8,10,12,13,14,16,18,20,22', id='cron_save_weather')
+    scheduler.add_job(delete_weather, 'cron', hour='13',id='cron_delete_weather')
+    scheduler.add_job(save_weather, 'cron', hour='0,2,4,6,8,10,12,14,16,18,20,22', id='cron_save_weather')
     scheduler.start()
 
 cron_weather()
